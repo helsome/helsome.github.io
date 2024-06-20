@@ -1,0 +1,173 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>infinite | infinite</title><meta name="author" content="helson"><meta name="copyright" content="helson"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="样本介绍2023年9月，QBit Ransomware-as-a-Service（RaaS）团队发布了一款使用Go编程语言创建的新勒索软件。这种恶意软件非常先进，可以针对Windows（从Windows 7到Windows 11）和各种Linux发行版。调查结果显示，qBitStealer只窃取具有特定扩展名的文件。这种独特的行为表明可能与数据盗窃相一致，指向其在勒索软件操作中的潜在用途。相比之下">
+<meta property="og:type" content="article">
+<meta property="og:title" content="infinite">
+<meta property="og:url" content="https://helsome.gihub.io/2024/05/28/qbit/index.html">
+<meta property="og:site_name" content="infinite">
+<meta property="og:description" content="样本介绍2023年9月，QBit Ransomware-as-a-Service（RaaS）团队发布了一款使用Go编程语言创建的新勒索软件。这种恶意软件非常先进，可以针对Windows（从Windows 7到Windows 11）和各种Linux发行版。调查结果显示，qBitStealer只窃取具有特定扩展名的文件。这种独特的行为表明可能与数据盗窃相一致，指向其在勒索软件操作中的潜在用途。相比之下">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://img2.imgtp.com/2024/04/27/x3rvd5Pc.jpg">
+<meta property="article:published_time" content="2024-05-28T10:29:01.606Z">
+<meta property="article:modified_time" content="2024-06-03T07:00:55.886Z">
+<meta property="article:author" content="helson">
+<meta property="article:tag" content="博客 reverse 摄影">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://img2.imgtp.com/2024/04/27/x3rvd5Pc.jpg"><link rel="shortcut icon" href="/"><link rel="canonical" href="https://helsome.gihub.io/2024/05/28/qbit/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="stylesheet" href="/css/index.css?v=4.12.0"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.32/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.11.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyload: true,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'infinite',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2024-06-03 15:00:55'
+}</script><script>(win=>{
+      win.saveToLocal = {
+        set: (key, value, ttl) => {
+          if (ttl === 0) return
+          const now = Date.now()
+          const expiry = now + ttl * 86400000
+          const item = {
+            value,
+            expiry
+          }
+          localStorage.setItem(key, JSON.stringify(item))
+        },
+      
+        get: key => {
+          const itemStr = localStorage.getItem(key)
+      
+          if (!itemStr) {
+            return undefined
+          }
+          const item = JSON.parse(itemStr)
+          const now = Date.now()
+      
+          if (now > item.expiry) {
+            localStorage.removeItem(key)
+            return undefined
+          }
+          return item.value
+        }
+      }
+    
+      win.getScript = (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        script.onerror = reject
+        script.onload = script.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          script.onload = script.onreadystatechange = null
+          resolve()
+        }
+
+        Object.keys(attr).forEach(key => {
+          script.setAttribute(key, attr[key])
+        })
+
+        document.head.appendChild(script)
+      })
+    
+      win.getCSS = (url, id = false) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onerror = reject
+        link.onload = link.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          link.onload = link.onreadystatechange = null
+          resolve()
+        }
+        document.head.appendChild(link)
+      })
+    
+      win.activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+        if (t === 'dark') activateDarkMode()
+        else if (t === 'light') activateLightMode()
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    
+      const detectApple = () => {
+        if(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+          document.documentElement.classList.add('apple')
+        }
+      }
+      detectApple()
+    })(window)</script><meta name="generator" content="Hexo 7.0.0"></head><body><div id="web_bg"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="https://img2.imgtp.com/2024/04/27/x3rvd5Pc.jpg" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="sidebar-site-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">7</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">1</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">1</div></a></div><hr class="custom-hr"/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page group" href="javascript:void(0);"><i class="fa-fw fa fas fa-book"></i><span> 文章</span><i class="fas fa-chevron-down"></i></a><ul class="menus_item_child"><li><a class="site-page child" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></li><li><a class="site-page child" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></li><li><a class="site-page child" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></li></ul></div><div class="menus_item"><a class="site-page group" href="javascript:void(0);"><i class="fa-fw fa fa-heartbeat"></i><span> 生活</span><i class="fas fa-chevron-down"></i></a><ul class="menus_item_child"><li><a class="site-page child" href="/book/"><i class="fa-fw fas fa-book"></i><span> 图书</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 电影</span></a></li><li><a class="site-page child" href="/gallery/"><i class="fa-fw fas fa-images"></i><span> 相册</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header"><nav id="nav"><span id="blog-info"><a href="/" title="infinite"><span class="site-name">infinite</span></a></span><div id="menus"><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page group" href="javascript:void(0);"><i class="fa-fw fa fas fa-book"></i><span> 文章</span><i class="fas fa-chevron-down"></i></a><ul class="menus_item_child"><li><a class="site-page child" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></li><li><a class="site-page child" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></li><li><a class="site-page child" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></li></ul></div><div class="menus_item"><a class="site-page group" href="javascript:void(0);"><i class="fa-fw fa fa-heartbeat"></i><span> 生活</span><i class="fas fa-chevron-down"></i></a><ul class="menus_item_child"><li><a class="site-page child" href="/book/"><i class="fa-fw fas fa-book"></i><span> 图书</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 电影</span></a></li><li><a class="site-page child" href="/gallery/"><i class="fa-fw fas fa-images"></i><span> 相册</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div><div id="toggle-menu"><a class="site-page" href="javascript:void(0);"><i class="fas fa-bars fa-fw"></i></a></div></div></nav><div id="post-info"><h1 class="post-title">无题</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2024-05-28T10:29:01.606Z" title="发表于 2024-05-28 18:29:01">2024-05-28</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2024-06-03T07:00:55.886Z" title="更新于 2024-06-03 15:00:55">2024-06-03</time></span></div><div class="meta-secondline"></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="post-content" id="article-container"><h1 id="样本介绍"><a href="#样本介绍" class="headerlink" title="样本介绍"></a>样本介绍</h1><p>2023年9月，QBit Ransomware-as-a-Service（RaaS）团队发布了一款使用Go编程语言创建的新勒索软件。这种恶意软件非常先进，可以针对Windows（从Windows 7到Windows 11）和各种Linux发行版。<br>调查结果显示，qBitStealer只窃取具有特定扩展名的文件。这种独特的行为表明可能与数据盗窃相一致，指向其在勒索软件操作中的潜在用途。相比之下，其他窃取者通常专注于从各种应用程序中窃取敏感数据，而不会在方法上有所选择。</p>
+<h2 id="样本信息"><a href="#样本信息" class="headerlink" title="样本信息"></a>样本信息</h2><p> <strong>源码文件结构</strong><br><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="C:/Users/helse/AppData/Roaming/Typora/typora-user-images/image-20240528182357079.png" alt="image-20240528182357079"><br><strong>样本主要技术点</strong></p>
+<p><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="C:/Users/helse/AppData/Roaming/Typora/typora-user-images/image-20240528182413529.png" alt="image-20240528182413529"></p>
+<h1 id="靶场题解"><a href="#靶场题解" class="headerlink" title="靶场题解"></a>靶场题解</h1><h2 id="阶段一：TA0007反调试技术相关"><a href="#阶段一：TA0007反调试技术相关" class="headerlink" title="阶段一：TA0007反调试技术相关"></a>阶段一：TA0007反调试技术相关</h2><p>反调试功能的主要实现方法在以下三个函数中：</p>
+<h3 id="源码"><a href="#源码" class="headerlink" title="源码"></a>源码</h3><p>主函数一开始就调用了这三个函数</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">func main() &#123;</span><br><span class="line">	Check()</span><br><span class="line">	Beingdebuggedpeb()</span><br><span class="line">	_NtQueryInformationProcess()</span><br><span class="line">	hardcodedTime, _ := time.Parse(&quot;2006/01/02-15:04:05&quot;, &quot;2023/11/14-12:00:00&quot;)</span><br><span class="line">	go checkTime(hardcodedTime, true) // false to turn off time check, vice versa</span><br></pre></td></tr></table></figure>
+<h4 id="check-（）"><a href="#check-（）" class="headerlink" title="check （）"></a>check （）</h4><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">Check</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="keyword">for</span> _, proc := <span class="keyword">range</span> processes &#123;</span><br><span class="line">		<span class="keyword">if</span> strings.Contains(strings.ToLower(os.Args[<span class="number">0</span>]), proc) &#123;</span><br><span class="line">			os.Exit(<span class="number">1</span>)</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>遍历进程列表，这里是预定义了一个进程列表。在intenal文件里<br><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="C:/Users/helse/AppData/Roaming/Typora/typora-user-images/image-20240528182431097.png" alt="image-20240528182431097"></p>
+<h4 id="NtQueryInformationProcess-（）-Beingdebuggedpeb"><a href="#NtQueryInformationProcess-（）-Beingdebuggedpeb" class="headerlink" title="NtQueryInformationProcess （）&amp;Beingdebuggedpeb()"></a>NtQueryInformationProcess （）&amp;Beingdebuggedpeb()</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">func Beingdebuggedpeb() &#123;</span><br><span class="line">	var pPeb uintptr</span><br><span class="line">	_, _, _ = procNtQueryInformationProcess.Call(uintptr(windows.CurrentProcess()), 0, uintptr(unsafe.Pointer(&amp;pPeb)), unsafe.Sizeof(pPeb), 0)</span><br><span class="line">	if pPeb != 0 &#123;</span><br><span class="line">		windows.Exit(1)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">func _NtQueryInformationProcess() &#123;</span><br><span class="line">	hProcess := windows.CurrentProcess()</span><br><span class="line">	var pProcBasicInfo ProcessBasicInformation</span><br><span class="line"></span><br><span class="line">	status, _, _ := procNtQueryInformationProcess.Call(uintptr(hProcess), 0, uintptr(unsafe.Pointer(&amp;pProcBasicInfo)), unsafe.Sizeof(pProcBasicInfo), 0)</span><br><span class="line">	if status == 0 &amp;&amp; pProcBasicInfo.PebBaseAddress.BeingDebugged != 0 &#123;</span><br><span class="line">		syscall.Exit(1)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p> 该代码检查进程环境块（PEB）是否包含“Beingforged”标志。非零值表示存在调试器或虚拟机。<br> PEB是一个结构体，在反调试中可以通过beingdebugged值来确定Debug的运行<br> &#x2F;&#x2F;不同系统版本可能不太一样<br>PEB.ProcessHeap &amp; PEB.NtGlobalFlag （和PEB.BeingDebugger成员一样）应用于反调试技术。若处于被调试状态，则它们会被赋于特定的值。</p>
+<h3 id="任务一：配置config文件进行文件盗窃"><a href="#任务一：配置config文件进行文件盗窃" class="headerlink" title="任务一：配置config文件进行文件盗窃"></a>任务一：配置config文件进行文件盗窃</h3><p>打开compiled文件夹<br><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="C:/Users/helse/AppData/Roaming/Typora/typora-user-images/image-20240528182504824.png" alt="image-20240528182504824"><br>修改config<br><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="C:/Users/helse/AppData/Roaming/Typora/typora-user-images/image-20240528182516184.png" alt="image-20240528182516184"><br><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="C:/Users/helse/AppData/Roaming/Typora/typora-user-images/image-20240528182522907.png" alt="image-20240528182522907"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">配置文件由以下字段组成：API凭据（API）：API对象中的ID和密码用于Mega[.]的身份验证。</span><br><span class="line">Path字段指定窃取者将开始搜索要漏出的文件的初始文件系统路径。如果未指定或无法访问，则默认使用所有可用驱动器。</span><br><span class="line">被盗文件夹名称（StolenFolderName）：此参数确定被盗后文件在云上所储存的位置。</span><br><span class="line">最大文件大小（MaxFileSizeMB）：MaxFileSizeMB字段定义窃取者将上传的文件的最大大小（以MB为单位）。将排除大于此限制的文件;默认情况下，此限制设置为150 MB。 </span><br><span class="line">分割大小（SplitSize）：它指定在上传过程中拆分大zip文件的大小（以兆字节为单位）;默认情况下，此值设置为50 MB。</span><br><span class="line">目标文件扩展名（TargetedFileExtensions）：这是窃取者配置为目标的文件扩展名数组。只有具有这些扩展名的文件才会被考虑用于exfiltration;默认情况下，它针对.txt、.pdf和.docx文件。</span><br></pre></td></tr></table></figure>
+<p>因此，在你进行测试前你需要在path指定的文件路径中新建文件<br><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="C:/Users/helse/AppData/Roaming/Typora/typora-user-images/image-20240528182531304.png" alt="image-20240528182531304"><br>完成以上内容后即可进行测试，运行qBit_Stealer_winx64.exe文件<br><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="C:/Users/helse/AppData/Roaming/Typora/typora-user-images/image-20240528182536726.png" alt="image-20240528182536726"><br>为了样本在网络中的稳定性，我们对样本源码进行了修改，去除了源码中的网络相关代码，只专注与我们要分析的几个技术。因此他的文件上传工作将会一直进行，无需惊讶。</p>
+<h3 id="任务二：分析IDA分析下样本反调试未起作用的原因"><a href="#任务二：分析IDA分析下样本反调试未起作用的原因" class="headerlink" title="任务二：分析IDA分析下样本反调试未起作用的原因"></a>任务二：分析IDA分析下样本反调试未起作用的原因</h3><h4 id="main-cheak"><a href="#main-cheak" class="headerlink" title="main_cheak"></a>main_cheak</h4><p>在ida中打开，我们可以看到函数具有反调试功能，可是没有作用。<br>动调到os_exit发现程序在判断时直接绕过了这一部分<br>函数调用后，它执行逻辑比较（<code>test rax, rax</code>）以检查寄存器 <code>rax</code> 中返回的值是否为零。<br>代码跳转到名为 <code>loc_10A72C2</code> 的位置，而不执行退出进程</p>
+<p><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="C:/Users/helse/AppData/Roaming/Typora/typora-user-images/image-20240528182550393.png" alt="image-20240528182550393"><br>观察此时RAX值<br><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="C:/Users/helse/AppData/Roaming/Typora/typora-user-images/image-20240528182603204.png" alt="image-20240528182603204"></p>
+<h4 id="Beingdebuggedpeb"><a href="#Beingdebuggedpeb" class="headerlink" title="Beingdebuggedpeb"></a>Beingdebuggedpeb</h4><p>动调发现，同样未执行退出进程操作<br><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="C:/Users/helse/AppData/Roaming/Typora/typora-user-images/image-20240528182613625.png" alt="image-20240528182613625"><br>调用了syscall_lazyproc_call,F7进入<br>调用syscall_lazyproc_find，f8过<br><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="C:/Users/helse/AppData/Roaming/Typora/typora-user-images/image-20240528182624917.png" alt="image-20240528182624917"><br>调用syscall_proc_call，随后返回<br><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="C:/Users/helse/AppData/Roaming/Typora/typora-user-images/image-20240528182633483.png" alt="image-20240528182633483"></p>
+<h4 id="main-NtQueryInformationProcess"><a href="#main-NtQueryInformationProcess" class="headerlink" title="main__NtQueryInformationProcess"></a>main__NtQueryInformationProcess</h4><p>同样是判断后跳过退出进程操作<br><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="C:/Users/helse/AppData/Roaming/Typora/typora-user-images/image-20240528182639758.png" alt="image-20240528182639758"></p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://helsome.gihub.io">helson</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://helsome.gihub.io/2024/05/28/qbit/">https://helsome.gihub.io/2024/05/28/qbit/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://helsome.gihub.io" target="_blank">infinite</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"></div><div class="post_share"><div class="social-share" data-image="https://img2.imgtp.com/2024/04/27/x3rvd5Pc.jpg" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.3/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.3/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-left"><a href="/2024/06/18/MySQL%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" title=""><div class="cover" style="background: var(--default-bg-color)"></div><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info"></div></div></a></div><div class="next-post pull-right"><a href="/2024/04/28/go%E8%AF%AD%E8%A8%80%E6%A0%B7%E6%9C%AC-%E9%80%86%E5%90%91%E5%88%86%E6%9E%90%E7%89%B9%E7%82%B9/" title="go语言样本逆向分析特点"><div class="cover" style="background: var(--default-bg-color)"></div><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">go语言样本逆向分析特点</div></div></a></div></nav></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="is-center"><div class="avatar-img"><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="https://img2.imgtp.com/2024/04/27/x3rvd5Pc.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info__name">helson</div><div class="author-info__description">吾生有涯，其知无涯</div></div><div class="card-info-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">7</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">1</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">1</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/xxxxxx"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons is-center"><a class="social-icon" href="https://github.com/helsome" target="_blank" title="Github"><i class="fab fa-github" style="color: #24292e;"></i></a><a class="social-icon" href="mailto:huichuanh8@gmail.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">This is my Blog</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%A0%B7%E6%9C%AC%E4%BB%8B%E7%BB%8D"><span class="toc-number">1.</span> <span class="toc-text">样本介绍</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A0%B7%E6%9C%AC%E4%BF%A1%E6%81%AF"><span class="toc-number">1.1.</span> <span class="toc-text">样本信息</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E9%9D%B6%E5%9C%BA%E9%A2%98%E8%A7%A3"><span class="toc-number">2.</span> <span class="toc-text">靶场题解</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%98%B6%E6%AE%B5%E4%B8%80%EF%BC%9ATA0007%E5%8F%8D%E8%B0%83%E8%AF%95%E6%8A%80%E6%9C%AF%E7%9B%B8%E5%85%B3"><span class="toc-number">2.1.</span> <span class="toc-text">阶段一：TA0007反调试技术相关</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%BA%90%E7%A0%81"><span class="toc-number">2.1.1.</span> <span class="toc-text">源码</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#check-%EF%BC%88%EF%BC%89"><span class="toc-number">2.1.1.1.</span> <span class="toc-text">check （）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#NtQueryInformationProcess-%EF%BC%88%EF%BC%89-Beingdebuggedpeb"><span class="toc-number">2.1.1.2.</span> <span class="toc-text">NtQueryInformationProcess （）&amp;Beingdebuggedpeb()</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BB%BB%E5%8A%A1%E4%B8%80%EF%BC%9A%E9%85%8D%E7%BD%AEconfig%E6%96%87%E4%BB%B6%E8%BF%9B%E8%A1%8C%E6%96%87%E4%BB%B6%E7%9B%97%E7%AA%83"><span class="toc-number">2.1.2.</span> <span class="toc-text">任务一：配置config文件进行文件盗窃</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BB%BB%E5%8A%A1%E4%BA%8C%EF%BC%9A%E5%88%86%E6%9E%90IDA%E5%88%86%E6%9E%90%E4%B8%8B%E6%A0%B7%E6%9C%AC%E5%8F%8D%E8%B0%83%E8%AF%95%E6%9C%AA%E8%B5%B7%E4%BD%9C%E7%94%A8%E7%9A%84%E5%8E%9F%E5%9B%A0"><span class="toc-number">2.1.3.</span> <span class="toc-text">任务二：分析IDA分析下样本反调试未起作用的原因</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#main-cheak"><span class="toc-number">2.1.3.1.</span> <span class="toc-text">main_cheak</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Beingdebuggedpeb"><span class="toc-number">2.1.3.2.</span> <span class="toc-text">Beingdebuggedpeb</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#main-NtQueryInformationProcess"><span class="toc-number">2.1.3.3.</span> <span class="toc-text">main__NtQueryInformationProcess</span></a></li></ol></li></ol></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/06/18/MySQL%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" title="无题">无题</a><time datetime="2024-06-18T07:15:43.947Z" title="发表于 2024-06-18 15:15:43">2024-06-18</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/05/28/qbit/" title="无题">无题</a><time datetime="2024-05-28T10:29:01.606Z" title="发表于 2024-05-28 18:29:01">2024-05-28</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/04/28/go%E8%AF%AD%E8%A8%80%E6%A0%B7%E6%9C%AC-%E9%80%86%E5%90%91%E5%88%86%E6%9E%90%E7%89%B9%E7%82%B9/" title="go语言样本逆向分析特点">go语言样本逆向分析特点</a><time datetime="2024-04-28T08:36:57.000Z" title="发表于 2024-04-28 16:36:57">2024-04-28</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/04/28/CobaltStrike-UPX%E8%84%B1%E5%A3%B3%E5%8A%A0%E5%A3%B3/" title="CobaltStrike UPX脱壳加壳">CobaltStrike UPX脱壳加壳</a><time datetime="2024-04-28T08:33:26.000Z" title="发表于 2024-04-28 16:33:26">2024-04-28</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/04/28/dll%E6%B3%A8%E5%85%A5%E6%8A%80%E6%9C%AF/" title="dll injection（dll注入）">dll injection（dll注入）</a><time datetime="2024-04-28T06:19:52.000Z" title="发表于 2024-04-28 14:19:52">2024-04-28</time></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2020 - 2024 By helson</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=4.12.0"></script><script src="/js/main.js?v=4.12.0"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.32/dist/fancybox/fancybox.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/vanilla-lazyload@17.8.5/dist/lazyload.iife.min.js"></script><div class="js-pjax"></div><canvas class="fireworks" mobile="false"></canvas><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.3/dist/fireworks.min.js"></script></div></body></html>
