@@ -1,0 +1,266 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>wannacry勒索病毒加密解密过程分析 | infinite</title><meta name="author" content="helson"><meta name="copyright" content="helson"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="病毒介绍*遭受WannaCry病毒侵害的电脑，其文件将被加密锁死，惯常来说，受害用户支付赎金后 可以获得解密密钥，恢复这些文件。但是根据火绒工程师的分析，遭受WannaCry攻击的 用户可能会永远失去这些文件。 WannaCry 病毒存在一个致命缺陷，即病毒作者无法明确认定哪些受害者支付了赎金，因 此很难给相应的解密密钥，所以用户即使支付了赎金，也未必能顺利获得密钥该电脑系统 及文件依旧无法得到恢">
+<meta property="og:type" content="article">
+<meta property="og:title" content="wannacry勒索病毒加密解密过程分析">
+<meta property="og:url" content="https://helsome.gihub.io/2024/07/08/wannacry/index.html">
+<meta property="og:site_name" content="infinite">
+<meta property="og:description" content="病毒介绍*遭受WannaCry病毒侵害的电脑，其文件将被加密锁死，惯常来说，受害用户支付赎金后 可以获得解密密钥，恢复这些文件。但是根据火绒工程师的分析，遭受WannaCry攻击的 用户可能会永远失去这些文件。 WannaCry 病毒存在一个致命缺陷，即病毒作者无法明确认定哪些受害者支付了赎金，因 此很难给相应的解密密钥，所以用户即使支付了赎金，也未必能顺利获得密钥该电脑系统 及文件依旧无法得到恢">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://img2.imgtp.com/2024/04/27/x3rvd5Pc.jpg">
+<meta property="article:published_time" content="2024-07-08T09:46:32.000Z">
+<meta property="article:modified_time" content="2024-07-08T10:27:46.693Z">
+<meta property="article:author" content="helson">
+<meta property="article:tag" content="reverse">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://img2.imgtp.com/2024/04/27/x3rvd5Pc.jpg"><link rel="shortcut icon" href="/"><link rel="canonical" href="https://helsome.gihub.io/2024/07/08/wannacry/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="stylesheet" href="/css/index.css?v=4.12.0"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.32/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.11.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyload: true,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'wannacry勒索病毒加密解密过程分析',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2024-07-08 18:27:46'
+}</script><script>(win=>{
+      win.saveToLocal = {
+        set: (key, value, ttl) => {
+          if (ttl === 0) return
+          const now = Date.now()
+          const expiry = now + ttl * 86400000
+          const item = {
+            value,
+            expiry
+          }
+          localStorage.setItem(key, JSON.stringify(item))
+        },
+      
+        get: key => {
+          const itemStr = localStorage.getItem(key)
+      
+          if (!itemStr) {
+            return undefined
+          }
+          const item = JSON.parse(itemStr)
+          const now = Date.now()
+      
+          if (now > item.expiry) {
+            localStorage.removeItem(key)
+            return undefined
+          }
+          return item.value
+        }
+      }
+    
+      win.getScript = (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        script.onerror = reject
+        script.onload = script.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          script.onload = script.onreadystatechange = null
+          resolve()
+        }
+
+        Object.keys(attr).forEach(key => {
+          script.setAttribute(key, attr[key])
+        })
+
+        document.head.appendChild(script)
+      })
+    
+      win.getCSS = (url, id = false) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onerror = reject
+        link.onload = link.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          link.onload = link.onreadystatechange = null
+          resolve()
+        }
+        document.head.appendChild(link)
+      })
+    
+      win.activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+        if (t === 'dark') activateDarkMode()
+        else if (t === 'light') activateLightMode()
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    
+      const detectApple = () => {
+        if(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+          document.documentElement.classList.add('apple')
+        }
+      }
+      detectApple()
+    })(window)</script><meta name="generator" content="Hexo 7.0.0"></head><body><div id="web_bg"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="https://img2.imgtp.com/2024/04/27/x3rvd5Pc.jpg" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="sidebar-site-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">8</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">3</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">1</div></a></div><hr class="custom-hr"/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page group" href="javascript:void(0);"><i class="fa-fw fa fas fa-book"></i><span> 文章</span><i class="fas fa-chevron-down"></i></a><ul class="menus_item_child"><li><a class="site-page child" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></li><li><a class="site-page child" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></li><li><a class="site-page child" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></li></ul></div><div class="menus_item"><a class="site-page group" href="javascript:void(0);"><i class="fa-fw fa fa-heartbeat"></i><span> 生活</span><i class="fas fa-chevron-down"></i></a><ul class="menus_item_child"><li><a class="site-page child" href="/book/"><i class="fa-fw fas fa-book"></i><span> 图书</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 电影</span></a></li><li><a class="site-page child" href="/gallery/"><i class="fa-fw fas fa-images"></i><span> 相册</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header"><nav id="nav"><span id="blog-info"><a href="/" title="infinite"><span class="site-name">infinite</span></a></span><div id="menus"><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page group" href="javascript:void(0);"><i class="fa-fw fa fas fa-book"></i><span> 文章</span><i class="fas fa-chevron-down"></i></a><ul class="menus_item_child"><li><a class="site-page child" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></li><li><a class="site-page child" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></li><li><a class="site-page child" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></li></ul></div><div class="menus_item"><a class="site-page group" href="javascript:void(0);"><i class="fa-fw fa fa-heartbeat"></i><span> 生活</span><i class="fas fa-chevron-down"></i></a><ul class="menus_item_child"><li><a class="site-page child" href="/book/"><i class="fa-fw fas fa-book"></i><span> 图书</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 电影</span></a></li><li><a class="site-page child" href="/gallery/"><i class="fa-fw fas fa-images"></i><span> 相册</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div><div id="toggle-menu"><a class="site-page" href="javascript:void(0);"><i class="fas fa-bars fa-fw"></i></a></div></div></nav><div id="post-info"><h1 class="post-title">wannacry勒索病毒加密解密过程分析</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2024-07-08T09:46:32.000Z" title="发表于 2024-07-08 17:46:32">2024-07-08</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2024-07-08T10:27:46.693Z" title="更新于 2024-07-08 18:27:46">2024-07-08</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/reverse/">reverse</a></span></div><div class="meta-secondline"></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="post-content" id="article-container"><h2 id="病毒介绍"><a href="#病毒介绍" class="headerlink" title="病毒介绍"></a>病毒介绍</h2><p>*遭受WannaCry病毒侵害的电脑，其文件将被加密锁死，惯常来说，受害用户支付赎金后 可以获得解密密钥，恢复这些文件。但是根据火绒工程师的分析，遭受WannaCry攻击的 用户可能会永远失去这些文件。 WannaCry 病毒存在一个致命缺陷，即病毒作者无法明确认定哪些受害者支付了赎金，因 此很难给相应的解密密钥，所以用户即使支付了赎金，也未必能顺利获得密钥该电脑系统 及文件依旧无法得到恢复。 至于网上流传的各种“解密方法”，基本上是没用的，请大家切勿听信谎言，以防遭受更多 财产损失。一些安全厂商提供的“解密工具”，其实只是“文件恢复工具”，可以恢复一些被 删除的文件，但是作用有限。<br><strong>因为病毒是生成加密过的用户文件后再删除原始文件</strong>，所以存在通过文件恢复类工具恢复 原始未加密文件的可能。但是因为病毒对文件系统的修改操作过于频繁，导致被删除的原 始文件数据块被覆盖，致使实际恢复效果有限。且随着系统持续运行，恢复类工具恢复数 据的可能性会显著降低。*<br>该病毒分为两个部分：</p>
+<ol>
+<li><p>蠕虫部分，用于病毒传播，并释放出勒索病毒。</p>
+</li>
+<li><p>勒索病毒部分，加密用户文件索要赎金。</p>
+<p>以下是对wnry的行为分析。关于病毒这一部分的分析，网上已经很丰富了。相应的分析在文末会有链接。我也没有必要再赘述，本文主要对其加解密部分进行分析。</p>
+</li>
+</ol>
+<img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="./../pic/post/image-20240708175204572.png" alt="image-20240708175204572" style="zoom: 67%;" />
+
+<p><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/./../pic/post/image-20240708175710023.png" alt="image-20240708175710023"></p>
+<h2 id="t-wnry的解密过程"><a href="#t-wnry的解密过程" class="headerlink" title="t.wnry的解密过程"></a>t.wnry的解密过程</h2><p>为什么要单独提这个呢，是因为这一部分的解密逻辑于后面是一致的。</p>
+<p><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/./../pic/post/image-20240708180613457.png" alt="image-20240708180613457"></p>
+<p>t.wnry使用的是Rijndael S-Box(AES)的一种加密算法，可以使用Hash &amp; Crypto Detector工具来检测加密算法。这里AES所使用的key是包含在t.wnry中的，同时处于加密状态<br>首选会调用CryptImportKey去导入key，再继续进入CryptImportKey函数</p>
+<p>开始先获取加密的上下文，然后在导入key，在跟进CryptAcquireContextA</p>
+<p><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/./../pic/post/image-20240708180639448.png" alt="image-20240708180639448"></p>
+<p><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/./../pic/post/image-20240708180647187.png" alt="image-20240708180647187"></p>
+<p>Key需要解密，使用的是系统自带的解密API，如下图所示：</p>
+<p><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/./../pic/post/image-20240708180711847.png" alt="image-20240708180711847"></p>
+<p>这里的解密密钥是保存在进程内存中的（RSA2）</p>
+<p><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/./../pic/post/image-20240708180726489.png" alt="image-20240708180726489"></p>
+<p><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/./../pic/post/image-20240708180731340.png" alt="image-20240708180731340"></p>
+<p>加密Key的是一个RSA2的算法，上面的数据是一个私钥<br>进入解密函数，这个函数的作用是对真实密钥进行扩展操作，根据算法位数进行相应的扩展。<br>然后就调用sub_40350F解密，解密的结果copy到缓冲区，</p>
+<p><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/./../pic/post/image-20240708180802442.png" alt="image-20240708180802442"></p>
+<p>接下来主要分析加密dll文件，在加密前会加载密钥，在加密过程中程序会规避系统运行所需文件以及自身文件<br>这里为了分析方便，所以先将内存中的t.wnry.dll文件dump出来。dump的方法如下：<br>1）使用x64dbg动态调试至解密后的地方，然后记录解密内容的首地址和长度。<br>2）使用PETools工具将wcry.exe进程的内存dump下来(右键菜单Dump Partial)。</p>
+<p><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/./../pic/post/image-20240708180844705.png" alt="image-20240708180844705"></p>
+<p>我们可以看到EAX寄存器中pe头“mz”</p>
+<p><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/./../pic/post/image-20240708180855729.png" alt="image-20240708180855729"></p>
+<p><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/./../pic/post/image-20240708181433832.png" alt="image-20240708181433832"></p>
+<p>dump下来即可</p>
+<h2 id="加密过程"><a href="#加密过程" class="headerlink" title="加密过程"></a>加密过程</h2><p>1.在本地生成一组密钥对：私钥B和公钥B<br>2.然后作者使用自己的公钥A对本地的私钥B进行RSA加密<br>3.加密文件前再生成一个16位的随机Key来<br>4.使用本地公钥B对随机Key进行RSA加密，然后再保存到加密文件的头部。注意：每个文件的加密Key都是随机不同的。每次加密都会重新生成key。所以同一个文件的两次密文是不同的。<br>5.然后使用随机Key对文件内容进行AES对称加密。</p>
+<p>加密过程如下图所示</p>
+<p><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/./../pic/post/image-20240708175822289.png" alt="image-20240708175822289"></p>
+<p>为什么会使用这么复杂的加密方式呢？这主要是效率上的考量，回顾密码学里的知识，AES作为对称加密技术，他的加密效率远高于RSA。但是RSA作为非对称加密技术，安全性更强。因此使用aes密钥加密文件（效率很高）后再将aes密钥加密。且加密两次，那么解密是十分困难的。</p>
+<p>其加解密用到的是系统自带API，通过GetProcAddress来获取地址动态调用的。<br><strong>CryptAcquireContext</strong> 函数用于获取特定<a target="_blank" rel="noopener" href="https://learn.microsoft.com/zh-cn/windows/desktop/SecGloss/c-gly">加密服务提供程序</a>中特定<a target="_blank" rel="noopener" href="https://learn.microsoft.com/zh-cn/windows/desktop/SecGloss/k-gly">密钥容器</a>的句柄 (CSP) 。 此返回的句柄用于调用使用所选 CSP 的 <a target="_blank" rel="noopener" href="https://learn.microsoft.com/zh-cn/windows/desktop/SecGloss/c-gly">CryptoAPI</a> 函数。<br><strong>BCryptImportKey</strong> 函数从密钥 <a target="_blank" rel="noopener" href="https://learn.microsoft.com/zh-cn/windows/desktop/SecGloss/b-gly">BLOB</a> 导入对称密钥。<a target="_blank" rel="noopener" href="https://learn.microsoft.com/zh-cn/windows/win32/api/wincrypt/nf-wincrypt-cryptimportkey">cryptImportKey 函数 (wincrypt.h) - Win32 apps | Microsoft Learn</a><br><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/./../pic/post/image-20240708181755145.png" alt="image-20240708181755145"><code>[in] pbData</code><strong>一个 BYTE</strong> 数组，其中包含<a target="_blank" rel="noopener" href="https://learn.microsoft.com/zh-cn/windows/desktop/api/wincrypt/ns-wincrypt-publickeystruc">一个 PUBLICKEYSTRUC</a> BLOB 标头，后跟加密密钥。 此密钥 BLOB 由 <a target="_blank" rel="noopener" href="https://learn.microsoft.com/zh-cn/windows/desktop/api/wincrypt/nf-wincrypt-cryptexportkey">CryptExportKey</a> 函数创建，此应用程序或可能在另一台计算机上运行的其他应用程序创建。<br><strong>CryptEncrypt</strong> 函数加密数据。 用于加密数据的算法由 CSP 模块持有的密钥指定，并由 <em>hKey</em> 参数引用。<br><strong>CryptDecrypt</strong> 函数使用 <a target="_blank" rel="noopener" href="https://learn.microsoft.com/zh-cn/windows/desktop/api/wincrypt/nf-wincrypt-cryptencrypt">CryptEncrypt</a> 函数解密以前加密的数据。<br>加密是会加载相应dll<br><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/./../pic/post/image-20240708181803086.png" alt="image-20240708181803086"></p>
+<p>这里是生成AES密钥 -随机生成<br><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/./../pic/post/image-20240708181814182.png" alt="image-20240708181814182"><br><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/./../pic/post/image-20240708181827962.png" alt="image-20240708181827962"></p>
+<p><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/./../pic/post/image-20240708181833127.png" alt="image-20240708181833127"><br><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/./../pic/post/image-20240708181840941.png" alt="image-20240708181840941"></p>
+<p>要想实现解密可以通过拦截aes的key被加密即可，但是由于每次生成的key都为随机，所以这种解密方法不具有通用性。只能解密拦截的文档。<br>那我们就尝试拦截密钥对的生成，可这个生成是在病毒刚刚发作的时候进行的。我们是不可能预知这个操作的。但这里可能存在一个漏洞，就是生成的明文私钥，还可能残留在内存中，只要原来的明文内存没有被覆盖掉，那就有可能在内存中找到。这就是一个希望，类似于磁盘恢复一样，在内存中恢复私钥。</p>
+<p>拦截的位置如下所示</p>
+<p><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/./../pic/post/image-20240708182056690.png" alt="image-20240708182056690"></p>
+<p>如下图：<br>该函数的主要功能是导出密钥数据并使用另一个密钥进行分块加密，然后将结果存储在全局内存块中。在加密后会将原来的明文内容覆盖掉</p>
+<p><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/./../pic/post/image-20240708181923825.png" alt="image-20240708181923825"></p>
+<p><strong>密钥生成和处理的步骤</strong></p>
+<ol>
+<li><p><strong>导出密钥</strong>：</p>
+<ul>
+<li>使用 <code>CryptExportKey</code> 函数导出密钥数据到 <code>pbData</code> 缓冲区。</li>
+</ul>
+</li>
+<li><p><strong>获取密钥参数</strong>：</p>
+<ul>
+<li>使用 <code>CryptGetKeyParam</code> 函数获取用于加密的密钥参数，存储在 <code>v25</code> 中。</li>
+</ul>
+</li>
+<li><p><strong>计算分块信息</strong>：</p>
+<ul>
+<li>根据获取的密钥参数，计算每块的数据大小及总块数。</li>
+</ul>
+</li>
+<li><p><strong>分块加密</strong>：</p>
+<ul>
+<li>分配内存块 <code>hMem</code> 用于存储加密后的数据。</li>
+<li>逐块处理数据，将每块数据存储到 <code>v27</code> 中，并使用 <code>dword_1000D948</code> 函数对其进行加密，然后将加密后的数据复制到 <code>hMem</code> 中。</li>
+</ul>
+</li>
+<li><p><strong>清空缓冲区</strong>：</p>
+<ul>
+<li>在加密完成或发生错误后，清空 <code>pbData</code> 缓冲区。</li>
+<li>如果发生错误，还会清空 <code>v27</code> 缓冲区，并释放分配的全局内存块 <code>hMem</code>。<br>下面这里进行清空操作</li>
+</ul>
+</li>
+</ol>
+<p><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/./../pic/post/image-20240708182123538.png" alt="image-20240708182123538"></p>
+<p>虽然这里进行了清空操作，但是依然会有一段时间会在内存中出现<br>我们定位 <strong><code>pbData</code> 缓冲区</strong>:</p>
+<ul>
+<li><p>用于存储 <code>CryptExportKey</code> 导出的密钥数据。</p>
+</li>
+<li><p>如果 <code>CryptExportKey</code> 或其他操作失败，<code>pbData</code> 会被清零。</p>
+</li>
+<li><p>在分块加密之后，<code>pbData</code> 被清零。</p>
+<p><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/./../pic/post/image-20240708182138239.png" alt="image-20240708182138239"></p>
+</li>
+</ul>
+<p>这里无法对该dll进行动态调试，需要进行一些操作,需要讲application改为tasksche.exe</p>
+<p><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/./../pic/post/image-20240708182155076.png" alt="image-20240708182155076"></p>
+<p><strong>定位过程</strong><br>在分析给定的代码时，<code>pbData</code> 的值在 <code>GlobalFree</code> 之前存放在内存位置中，而不是在特定的寄存器中。我们可以通过代码的执行路径来定位 <code>pbData</code> 的值存放在哪个寄存器或内存位置中。<br>首先，<code>pbData</code> 是一个 4096 字节的缓冲区，用于存储从 <code>CryptExportKey</code> 导出的密钥数据。整个分析过程可以分为几个关键步骤：<br>在分析给定的代码时，<code>pbData</code> 的值在 <code>GlobalFree</code> 之前存放在内存位置中，而不是在特定的寄存器中。我们可以通过代码的执行路径来定位 <code>pbData</code> 的值存放在哪个寄存器或内存位置中。<br>首先，<code>pbData</code> 是一个 4096 字节的缓冲区，用于存储从 <code>CryptExportKey</code> 导出的密钥数据。整个分析过程可以分为几个关键步骤：</p>
+<ol>
+<li><code>CryptExportKey</code> 导出密钥数据<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">call    ds:CryptExportKey</span><br><span class="line">test    eax, eax</span><br><span class="line">jnz     short loc_100041C2</span><br></pre></td></tr></table></figure>
+如果 <code>CryptExportKey</code> 调用成功（<code>eax</code> 非零），代码会跳转到 <code>loc_100041C2</code> 继续执行。</li>
+<li><code>pbData</code> 的值在内存中的存储<br><code>pbData</code> 在内存中的偏移量为 <code>0x30</code>（即 <code>esp+2024h+pbData</code>），这是一个固定的位置。</li>
+<li>清空 <code>pbData</code> 缓冲区<br>如果任何步骤失败，会清空 <code>pbData</code> 缓冲区。<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">mov     ecx, 1000h</span><br><span class="line">loc_100041F2:</span><br><span class="line">mov     byte ptr [eax], 0</span><br><span class="line">inc     eax</span><br><span class="line">dec     ecx</span><br><span class="line">jnz     short loc_100041F2</span><br></pre></td></tr></table></figure>
+在这个代码块中，<code>pbData</code> 被清零。</li>
+<li>成功路径中的 <code>pbData</code> 访问<br>在成功路径中，<code>pbData</code> 被复制到另一个缓冲区中以进行进一步处理。<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">lea     esi, [esp+eax+2028h+pbData]</span><br></pre></td></tr></table></figure>
+这里 <code>esi</code> 指向 <code>pbData</code> 缓冲区。</li>
+<li>清空 <code>pbData</code> 缓冲区的最后一步<br>在跳转到 <code>loc_10004300</code> 时，<code>pbData</code> 缓冲区将被再次清空：<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">mov     ecx, [esp+2024h+pbData]</span><br><span class="line">mov     edx, 1000h</span><br><span class="line">loc_10004309:</span><br><span class="line">mov     byte ptr [ecx], 0</span><br><span class="line">inc     ecx</span><br><span class="line">dec     edx</span><br><span class="line">jnz     short loc_10004309</span><br></pre></td></tr></table></figure>
+<code>ecx</code> 被设置为指向 <code>pbData</code> 缓冲区的起始地址，并通过循环清零该缓冲区。</li>
+<li>释放内存前的 <code>pbData</code> 存储<br>在 <code>GlobalFree</code> 调用之前，<code>pbData</code> 的值已经被存储在 <code>esp+2024h+hMem</code>:<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">mov     eax, [esp+2024h+hMem]</span><br><span class="line">push    eax</span><br><span class="line">call    ds:GlobalFree</span><br></pre></td></tr></table></figure>
+<code>pbData</code> 的值在 <code>GlobalFree</code> 之前存放在内存位置 <code>esp+2024h+pbData</code> 和 <code>esp+2024h+hMem</code> 中。具体的寄存器中并没有直接存储 <code>pbData</code> 的值，而是通过内存位置间接访问。</li>
+</ol>
+<p>rsa加密的私钥</p>
+<p><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="/./../pic/post/image-20240708182235103.png" alt="image-20240708182235103"></p>
+<p>作者公钥-&gt;本地私钥-&gt;本地公钥-&gt;随机Key-&gt;加密文档<br>整个过程都是环环相扣的。如果想要解密你的文档，可能只有将你的私钥提供给作者，然后作者再使用自己的私钥将你的私钥解密。然后在发送给你一个未加密的私钥。最后你使用这个私钥来解密自己的文档。</p>
+<p>没有作者的私钥就永远无法解密文档。但本着探索的精神，可以下断点使得第二次rsa加密不进行，然后编写程序对文档进行还原：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> cryptography.hazmat.primitives.asymmetric <span class="keyword">import</span> rsa, padding</span><br><span class="line"><span class="keyword">from</span> cryptography.hazmat.primitives <span class="keyword">import</span> serialization, hashes</span><br><span class="line"><span class="keyword">from</span> cryptography.hazmat.primitives.ciphers <span class="keyword">import</span> Cipher, algorithms, modes</span><br><span class="line"><span class="keyword">import</span> base64</span><br><span class="line"></span><br><span class="line"><span class="comment"># 替换为rsa公钥私钥即可</span></span><br><span class="line">rsa_private_key_pem = <span class="string">b&quot;&quot;&quot;-----BEGIN RSA PRIVATE KEY-----</span></span><br><span class="line"><span class="string">...</span></span><br><span class="line"><span class="string">-----END RSA PRIVATE KEY-----&quot;&quot;&quot;</span></span><br><span class="line">rsa_public_key_pem = <span class="string">b&quot;&quot;&quot;-----BEGIN PUBLIC KEY-----</span></span><br><span class="line"><span class="string">...</span></span><br><span class="line"><span class="string">-----END PUBLIC KEY-----&quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 已加密的 AES 密钥（用 RSA 加密）</span></span><br><span class="line">encrypted_aes_key_base64 = <span class="string">&quot;...&quot;</span></span><br><span class="line">encrypted_aes_key = base64.b64decode(encrypted_aes_key_base64)</span><br><span class="line"></span><br><span class="line"><span class="comment"># AES 加密的密文（用 AES 加密）</span></span><br><span class="line">ciphertext_base64 = <span class="string">&quot;...&quot;</span></span><br><span class="line">ciphertext = base64.b64decode(ciphertext_base64)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 初始化 RSA 私钥对象</span></span><br><span class="line">rsa_private_key = serialization.load_pem_private_key(</span><br><span class="line">    rsa_private_key_pem,</span><br><span class="line">    password=<span class="literal">None</span>,</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 用 RSA 私钥解密 AES 密钥</span></span><br><span class="line">aes_key = rsa_private_key.decrypt(</span><br><span class="line">    encrypted_aes_key,</span><br><span class="line">    padding.OAEP(</span><br><span class="line">        mgf=padding.MGF1(algorithm=hashes.SHA256()),</span><br><span class="line">        algorithm=hashes.SHA256(),</span><br><span class="line">        label=<span class="literal">None</span></span><br><span class="line">    )</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 假设 AES 使用 CBC 模式加密，初始化向量 IV 通常是密文的前 16 个字节</span></span><br><span class="line">iv = ciphertext[:<span class="number">16</span>]</span><br><span class="line">actual_ciphertext = ciphertext[<span class="number">16</span>:]</span><br><span class="line"></span><br><span class="line"><span class="comment"># 初始化 AES 解密对象</span></span><br><span class="line">cipher = Cipher(algorithms.AES(aes_key), modes.CBC(iv))</span><br><span class="line">decryptor = cipher.decryptor()</span><br><span class="line"></span><br><span class="line"><span class="comment"># 解密 AES 密文</span></span><br><span class="line">plaintext_padded = decryptor.update(actual_ciphertext) + decryptor.finalize()</span><br><span class="line"></span><br><span class="line"><span class="comment"># 移除填充 (PKCS7)</span></span><br><span class="line">padding_len = plaintext_padded[-<span class="number">1</span>]</span><br><span class="line">plaintext = plaintext_padded[:-padding_len]</span><br><span class="line"></span><br><span class="line"><span class="comment"># 输出明文</span></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;明文:&quot;</span>, plaintext.decode(<span class="string">&#x27;utf-8&#x27;</span>))</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>wannacry是一个相当复杂的样本，本人不觉得自己的分析会比从业多年的大牛更加深入有条理。本文对加密策略的分析与解密的尝试也是对网上已有文章的进一步拓展。</p>
+<p>参考文章：</p>
+<p><a target="_blank" rel="noopener" href="https://3gstudent.github.io/%E9%80%86%E5%90%91%E5%88%86%E6%9E%90-%E4%BD%BF%E7%94%A8IDA%E5%8A%A8%E6%80%81%E8%B0%83%E8%AF%95WanaCrypt0r%E4%B8%AD%E7%9A%84tasksche.exe">https://3gstudent.github.io/%E9%80%86%E5%90%91%E5%88%86%E6%9E%90-%E4%BD%BF%E7%94%A8IDA%E5%8A%A8%E6%80%81%E8%B0%83%E8%AF%95WanaCrypt0r%E4%B8%AD%E7%9A%84tasksche.exe</a></p>
+<p>[<a target="_blank" rel="noopener" href="https://bbs.kanxue.com/thread-267595.htm#msg_header_h1_6">原创]Wannacry勒索病毒样本分析-软件逆向-看雪-安全社区|安全招聘|kanxue.com</a></p>
+<p>[<a target="_blank" rel="noopener" href="https://bbs.kanxue.com/thread-217586-2.htm">下载]永恒之蓝样本（勒索病毒）-软件逆向-看雪-安全社区|安全招聘|kanxue.com</a></p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://helsome.gihub.io">helson</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://helsome.gihub.io/2024/07/08/wannacry/">https://helsome.gihub.io/2024/07/08/wannacry/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://helsome.gihub.io" target="_blank">infinite</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/reverse/">reverse</a></div><div class="post_share"><div class="social-share" data-image="https://img2.imgtp.com/2024/04/27/x3rvd5Pc.jpg" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.3/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.3/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><div class="next-post pull-full"><a href="/2024/07/08/blog%E6%8A%98%E8%85%BE%E6%97%A5%E8%AE%B0/" title="博客踩坑日记"><div class="cover" style="background: var(--default-bg-color)"></div><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">博客踩坑日记</div></div></a></div></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><div><a href="/2024/04/28/CobaltStrike-UPX%E8%84%B1%E5%A3%B3%E5%8A%A0%E5%A3%B3/" title="CobaltStrike UPX脱壳加壳"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-04-28</div><div class="title">CobaltStrike UPX脱壳加壳</div></div></a></div><div><a href="/2024/01/17/PE%E6%96%87%E4%BB%B6%E7%BB%93%E6%9E%84%EF%BC%88%E8%87%AA%E7%94%A8%EF%BC%89/" title="PE文件浅析"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-01-17</div><div class="title">PE文件浅析</div></div></a></div><div><a href="/2024/04/28/dll%E6%B3%A8%E5%85%A5%E6%8A%80%E6%9C%AF/" title="dll injection（dll注入）"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-04-28</div><div class="title">dll injection（dll注入）</div></div></a></div><div><a href="/2024/04/28/go%E8%AF%AD%E8%A8%80%E6%A0%B7%E6%9C%AC-%E9%80%86%E5%90%91%E5%88%86%E6%9E%90%E7%89%B9%E7%82%B9/" title="go语言样本逆向分析特点"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-04-28</div><div class="title">go语言样本逆向分析特点</div></div></a></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="is-center"><div class="avatar-img"><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-lazy-src="https://img2.imgtp.com/2024/04/27/x3rvd5Pc.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info__name">helson</div><div class="author-info__description">吾生有涯，其知无涯</div></div><div class="card-info-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">8</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">3</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">1</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/xxxxxx"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons is-center"><a class="social-icon" href="https://github.com/helsome" target="_blank" title="Github"><i class="fab fa-github" style="color: #24292e;"></i></a><a class="social-icon" href="mailto:huichuanh8@gmail.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">This is my Blog</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%97%85%E6%AF%92%E4%BB%8B%E7%BB%8D"><span class="toc-number">1.</span> <span class="toc-text">病毒介绍</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#t-wnry%E7%9A%84%E8%A7%A3%E5%AF%86%E8%BF%87%E7%A8%8B"><span class="toc-number">2.</span> <span class="toc-text">t.wnry的解密过程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8A%A0%E5%AF%86%E8%BF%87%E7%A8%8B"><span class="toc-number">3.</span> <span class="toc-text">加密过程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-number">4.</span> <span class="toc-text">总结</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/07/08/wannacry/" title="wannacry勒索病毒加密解密过程分析">wannacry勒索病毒加密解密过程分析</a><time datetime="2024-07-08T09:46:32.000Z" title="发表于 2024-07-08 17:46:32">2024-07-08</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/07/08/blog%E6%8A%98%E8%85%BE%E6%97%A5%E8%AE%B0/" title="博客踩坑日记">博客踩坑日记</a><time datetime="2024-07-08T04:55:10.000Z" title="发表于 2024-07-08 12:55:10">2024-07-08</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/06/20/MYSQL%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0-0/" title="MYSQL学习笔记">MYSQL学习笔记</a><time datetime="2024-06-20T13:46:23.000Z" title="发表于 2024-06-20 21:46:23">2024-06-20</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/04/28/go%E8%AF%AD%E8%A8%80%E6%A0%B7%E6%9C%AC-%E9%80%86%E5%90%91%E5%88%86%E6%9E%90%E7%89%B9%E7%82%B9/" title="go语言样本逆向分析特点">go语言样本逆向分析特点</a><time datetime="2024-04-28T08:36:57.000Z" title="发表于 2024-04-28 16:36:57">2024-04-28</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/04/28/CobaltStrike-UPX%E8%84%B1%E5%A3%B3%E5%8A%A0%E5%A3%B3/" title="CobaltStrike UPX脱壳加壳">CobaltStrike UPX脱壳加壳</a><time datetime="2024-04-28T08:33:26.000Z" title="发表于 2024-04-28 16:33:26">2024-04-28</time></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2020 - 2024 By helson</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=4.12.0"></script><script src="/js/main.js?v=4.12.0"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.32/dist/fancybox/fancybox.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/vanilla-lazyload@17.8.5/dist/lazyload.iife.min.js"></script><div class="js-pjax"></div><canvas class="fireworks" mobile="false"></canvas><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.3/dist/fireworks.min.js"></script></div></body></html>
