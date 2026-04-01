@@ -1,0 +1,1853 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>MYSQL学习笔记 | infinite</title><meta name="author" content="helson"><meta name="copyright" content="helson"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="F8F5EF"><meta name="description" content="MySQL学习笔记登录和退出MySQL服务器# 登录MySQL $ mysql -u root -p12345612  # 退出MySQL数据库服务器 exit;  基本语法-- 显示所有数据库 show databases;  -- 创建数据库 CREATE DATABASE test;  -- 切换数据库 use test;  -- 显示数据库中的所有表 show tables;  -- 创建">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MYSQL学习笔记">
+<meta property="og:url" content="https://helsome.github.io/2024/06/20/MYSQL%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0-0/index.html">
+<meta property="og:site_name" content="infinite">
+<meta property="og:description" content="MySQL学习笔记登录和退出MySQL服务器# 登录MySQL $ mysql -u root -p12345612  # 退出MySQL数据库服务器 exit;  基本语法-- 显示所有数据库 show databases;  -- 创建数据库 CREATE DATABASE test;  -- 切换数据库 use test;  -- 显示数据库中的所有表 show tables;  -- 创建">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://helsome.github.io/img/butterfly-icon.png">
+<meta property="article:published_time" content="2024-06-20T13:46:23.000Z">
+<meta property="article:modified_time" content="2026-04-01T03:52:49.566Z">
+<meta property="article:author" content="helson">
+<meta property="article:tag" content="课程">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://helsome.github.io/img/butterfly-icon.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "MYSQL学习笔记",
+  "url": "https://helsome.github.io/2024/06/20/MYSQL%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0-0/",
+  "image": "https://helsome.github.io/img/butterfly-icon.png",
+  "datePublished": "2024-06-20T13:46:23.000Z",
+  "dateModified": "2026-04-01T03:52:49.566Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "helson",
+      "url": "https://helsome.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://helsome.github.io/2024/06/20/MYSQL%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0-0/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//fonts.googleapis.com" crossorigin=""/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.4"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', 'F8F5EF')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&amp;display=swap" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.13.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'MYSQL学习笔记',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="/css/custom.css"><meta name="generator" content="Hexo 8.1.1"></head><body><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">infinite</span></a><a class="nav-page-title" href="/"><span class="site-name">MYSQL学习笔记</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">MYSQL学习笔记</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2024-06-20T13:46:23.000Z" title="发表于 2024-06-20 21:46:23">2024-06-20</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-04-01T03:52:49.566Z" title="更新于 2026-04-01 11:52:49">2026-04-01</time></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div><article class="container post-content" id="article-container"><h1 id="MySQL学习笔记"><a href="#MySQL学习笔记" class="headerlink" title="MySQL学习笔记"></a>MySQL学习笔记</h1><h2 id="登录和退出MySQL服务器"><a href="#登录和退出MySQL服务器" class="headerlink" title="登录和退出MySQL服务器"></a>登录和退出MySQL服务器</h2><pre><code># 登录MySQL
+$ mysql -u root -p12345612
+
+# 退出MySQL数据库服务器
+exit;
+</code></pre>
+<h2 id="基本语法"><a href="#基本语法" class="headerlink" title="基本语法"></a>基本语法</h2><pre><code>-- 显示所有数据库
+show databases;
+
+-- 创建数据库
+CREATE DATABASE test;
+
+-- 切换数据库
+use test;
+
+-- 显示数据库中的所有表
+show tables;
+
+-- 创建数据表
+CREATE TABLE pet (
+    name VARCHAR(20),
+    owner VARCHAR(20),
+    species VARCHAR(20),
+    sex CHAR(1),
+    birth DATE,
+    death DATE
+);
+
+-- 查看数据表结构
+-- describe pet;
+desc pet;
+
+-- 查询表
+SELECT * from pet;
+
+-- 插入数据
+INSERT INTO pet VALUES (&#39;puffball&#39;, &#39;Diane&#39;, &#39;hamster&#39;, &#39;f&#39;, &#39;1990-03-30&#39;, NULL);
+
+-- 修改数据
+UPDATE pet SET name = &#39;squirrel&#39; where owner = &#39;Diane&#39;;
+
+-- 删除数据
+DELETE FROM pet where name = &#39;squirrel&#39;;
+
+-- 删除表
+DROP TABLE myorder;
+</code></pre>
+<h2 id="建表约束"><a href="#建表约束" class="headerlink" title="建表约束"></a>建表约束</h2><h3 id="主键约束"><a href="#主键约束" class="headerlink" title="主键约束"></a>主键约束</h3><pre><code>-- 主键约束
+-- 使某个字段不重复且不得为空，确保表内所有数据的唯一性。
+CREATE TABLE user (
+    id INT PRIMARY KEY,
+    name VARCHAR(20)
+);
+
+-- 联合主键
+-- 联合主键中的每个字段都不能为空，并且加起来不能和已设置的联合主键重复。
+CREATE TABLE user (
+    id INT,
+    name VARCHAR(20),
+    password VARCHAR(20),
+    PRIMARY KEY(id, name)
+);
+
+-- 自增约束
+-- 自增约束的主键由系统自动递增分配。
+CREATE TABLE user (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(20)
+);
+
+-- 添加主键约束
+-- 如果忘记设置主键，还可以通过SQL语句设置（两种方式）：
+ALTER TABLE user ADD PRIMARY KEY(id);
+ALTER TABLE user MODIFY id INT PRIMARY KEY;
+
+-- 删除主键
+ALTER TABLE user drop PRIMARY KEY;
+</code></pre>
+<h3 id="唯一主键"><a href="#唯一主键" class="headerlink" title="唯一主键"></a>唯一主键</h3><pre><code>-- 建表时创建唯一主键
+CREATE TABLE user (
+    id INT,
+    name VARCHAR(20),
+    UNIQUE(name)
+);
+
+-- 添加唯一主键
+-- 如果建表时没有设置唯一建，还可以通过SQL语句设置（两种方式）：
+ALTER TABLE user ADD UNIQUE(name);
+ALTER TABLE user MODIFY name VARCHAR(20) UNIQUE;
+
+-- 删除唯一主键
+ALTER TABLE user DROP INDEX name;
+</code></pre>
+<h3 id="非空约束"><a href="#非空约束" class="headerlink" title="非空约束"></a>非空约束</h3><pre><code>-- 建表时添加非空约束
+-- 约束某个字段不能为空
+CREATE TABLE user (
+    id INT,
+    name VARCHAR(20) NOT NULL
+);
+
+-- 移除非空约束
+ALTER TABLE user MODIFY name VARCHAR(20);
+</code></pre>
+<h3 id="默认约束"><a href="#默认约束" class="headerlink" title="默认约束"></a>默认约束</h3><pre><code>-- 建表时添加默认约束
+-- 约束某个字段的默认值
+CREATE TABLE user2 (
+    id INT,
+    name VARCHAR(20),
+    age INT DEFAULT 10
+);
+
+-- 移除非空约束
+ALTER TABLE user MODIFY age INT;
+</code></pre>
+<h3 id="外键约束"><a href="#外键约束" class="headerlink" title="外键约束"></a>外键约束</h3><pre><code>-- 班级
+CREATE TABLE classes (
+    id INT PRIMARY KEY,
+    name VARCHAR(20)
+);
+
+-- 学生表
+CREATE TABLE students (
+    id INT PRIMARY KEY,
+    name VARCHAR(20),
+    -- 这里的 class_id 要和 classes 中的 id 字段相关联
+    class_id INT,
+    -- 表示 class_id 的值必须来自于 classes 中的 id 字段值
+    FOREIGN KEY(class_id) REFERENCES classes(id)
+);
+
+-- 1. 主表（父表）classes 中没有的数据值，在副表（子表）students 中，是不可以使用的；
+-- 2. 主表中的记录被副表引用时，主表不可以被删除。
+</code></pre>
+<h2 id="数据库的三大设计范式"><a href="#数据库的三大设计范式" class="headerlink" title="数据库的三大设计范式"></a>数据库的三大设计范式</h2><h3 id="1NF"><a href="#1NF" class="headerlink" title="1NF"></a>1NF</h3><p>只要字段值还可以继续拆分，就不满足第一范式。</p>
+<p>范式设计得越详细，对某些实际操作可能会更好，但并非都有好处，需要对项目的实际情况进行设定。</p>
+<h3 id="2NF"><a href="#2NF" class="headerlink" title="2NF"></a>2NF</h3><p>在满足第一范式的前提下，其他列都必须完全依赖于主键列。如果出现不完全依赖，只可能发生在联合主键的情况下：</p>
+<pre><code>-- 订单表
+CREATE TABLE myorder (
+    product_id INT,
+    customer_id INT,
+    product_name VARCHAR(20),
+    customer_name VARCHAR(20),
+    PRIMARY KEY (product_id, customer_id)
+);
+</code></pre>
+<p>实际上，在这张订单表中，<code>product_name</code> 只依赖于 <code>product_id</code> ，<code>customer_name</code> 只依赖于 <code>customer_id</code> 。也就是说，<code>product_name</code> 和 <code>customer_id</code> 是没用关系的，<code>customer_name</code> 和 <code>product_id</code> 也是没有关系的。</p>
+<p>这就不满足第二范式：其他列都必须完全依赖于主键列！</p>
+<pre><code>CREATE TABLE myorder (
+    order_id INT PRIMARY KEY,
+    product_id INT,
+    customer_id INT
+);
+
+CREATE TABLE product (
+    id INT PRIMARY KEY,
+    name VARCHAR(20)
+);
+
+CREATE TABLE customer (
+    id INT PRIMARY KEY,
+    name VARCHAR(20)
+);
+</code></pre>
+<p>拆分之后，<code>myorder</code> 表中的 <code>product_id</code> 和 <code>customer_id</code> 完全依赖于 <code>order_id</code> 主键，而 <code>product</code> 和 <code>customer</code> 表中的其他字段又完全依赖于主键。满足了第二范式的设计！</p>
+<h3 id="3NF"><a href="#3NF" class="headerlink" title="3NF"></a>3NF</h3><p>在满足第二范式的前提下，除了主键列之外，其他列之间不能有传递依赖关系。</p>
+<pre><code>CREATE TABLE myorder (
+    order_id INT PRIMARY KEY,
+    product_id INT,
+    customer_id INT,
+    customer_phone VARCHAR(15)
+);
+</code></pre>
+<p>表中的 <code>customer_phone</code> 有可能依赖于 <code>order_id</code> 、 <code>customer_id</code> 两列，也就不满足了第三范式的设计：其他列之间不能有传递依赖关系。</p>
+<pre><code>CREATE TABLE myorder (
+    order_id INT PRIMARY KEY,
+    product_id INT,
+    customer_id INT
+);
+
+CREATE TABLE customer (
+    id INT PRIMARY KEY,
+    name VARCHAR(20),
+    phone VARCHAR(15)
+);
+</code></pre>
+<p>修改后就不存在其他列之间的传递依赖关系，其他列都只依赖于主键列，满足了第三范式的设计！</p>
+<h2 id="查询练习"><a href="#查询练习" class="headerlink" title="查询练习"></a>查询练习</h2><h3 id="准备数据"><a href="#准备数据" class="headerlink" title="准备数据"></a>准备数据</h3><pre><code>-- 创建数据库
+CREATE DATABASE select_test;
+-- 切换数据库
+USE select_test;
+
+-- 创建学生表
+CREATE TABLE student (
+    no VARCHAR(20) PRIMARY KEY,
+    name VARCHAR(20) NOT NULL,
+    sex VARCHAR(10) NOT NULL,
+    birthday DATE, -- 生日
+    class VARCHAR(20) -- 所在班级
+);
+
+-- 创建教师表
+CREATE TABLE teacher (
+    no VARCHAR(20) PRIMARY KEY,
+    name VARCHAR(20) NOT NULL,
+    sex VARCHAR(10) NOT NULL,
+    birthday DATE,
+    profession VARCHAR(20) NOT NULL, -- 职称
+    department VARCHAR(20) NOT NULL -- 部门
+);
+
+-- 创建课程表
+CREATE TABLE course (
+    no VARCHAR(20) PRIMARY KEY,
+    name VARCHAR(20) NOT NULL,
+    t_no VARCHAR(20) NOT NULL, -- 教师编号
+    -- 表示该 tno 来自于 teacher 表中的 no 字段值
+    FOREIGN KEY(t_no) REFERENCES teacher(no) 
+);
+
+-- 成绩表
+CREATE TABLE score (
+    s_no VARCHAR(20) NOT NULL, -- 学生编号
+    c_no VARCHAR(20) NOT NULL, -- 课程号
+    degree DECIMAL,	-- 成绩
+    -- 表示该 s_no, c_no 分别来自于 student, course 表中的 no 字段值
+    FOREIGN KEY(s_no) REFERENCES student(no),	
+    FOREIGN KEY(c_no) REFERENCES course(no),
+    -- 设置 s_no, c_no 为联合主键
+    PRIMARY KEY(s_no, c_no)
+);
+
+-- 查看所有表
+SHOW TABLES;
+
+-- 添加学生表数据
+INSERT INTO student VALUES(&#39;101&#39;, &#39;曾华&#39;, &#39;男&#39;, &#39;1977-09-01&#39;, &#39;95033&#39;);
+INSERT INTO student VALUES(&#39;102&#39;, &#39;匡明&#39;, &#39;男&#39;, &#39;1975-10-02&#39;, &#39;95031&#39;);
+INSERT INTO student VALUES(&#39;103&#39;, &#39;王丽&#39;, &#39;女&#39;, &#39;1976-01-23&#39;, &#39;95033&#39;);
+INSERT INTO student VALUES(&#39;104&#39;, &#39;李军&#39;, &#39;男&#39;, &#39;1976-02-20&#39;, &#39;95033&#39;);
+INSERT INTO student VALUES(&#39;105&#39;, &#39;王芳&#39;, &#39;女&#39;, &#39;1975-02-10&#39;, &#39;95031&#39;);
+INSERT INTO student VALUES(&#39;106&#39;, &#39;陆军&#39;, &#39;男&#39;, &#39;1974-06-03&#39;, &#39;95031&#39;);
+INSERT INTO student VALUES(&#39;107&#39;, &#39;王尼玛&#39;, &#39;男&#39;, &#39;1976-02-20&#39;, &#39;95033&#39;);
+INSERT INTO student VALUES(&#39;108&#39;, &#39;张全蛋&#39;, &#39;男&#39;, &#39;1975-02-10&#39;, &#39;95031&#39;);
+INSERT INTO student VALUES(&#39;109&#39;, &#39;赵铁柱&#39;, &#39;男&#39;, &#39;1974-06-03&#39;, &#39;95031&#39;);
+
+-- 添加教师表数据
+INSERT INTO teacher VALUES(&#39;804&#39;, &#39;李诚&#39;, &#39;男&#39;, &#39;1958-12-02&#39;, &#39;副教授&#39;, &#39;计算机系&#39;);
+INSERT INTO teacher VALUES(&#39;856&#39;, &#39;张旭&#39;, &#39;男&#39;, &#39;1969-03-12&#39;, &#39;讲师&#39;, &#39;电子工程系&#39;);
+INSERT INTO teacher VALUES(&#39;825&#39;, &#39;王萍&#39;, &#39;女&#39;, &#39;1972-05-05&#39;, &#39;助教&#39;, &#39;计算机系&#39;);
+INSERT INTO teacher VALUES(&#39;831&#39;, &#39;刘冰&#39;, &#39;女&#39;, &#39;1977-08-14&#39;, &#39;助教&#39;, &#39;电子工程系&#39;);
+
+-- 添加课程表数据
+INSERT INTO course VALUES(&#39;3-105&#39;, &#39;计算机导论&#39;, &#39;825&#39;);
+INSERT INTO course VALUES(&#39;3-245&#39;, &#39;操作系统&#39;, &#39;804&#39;);
+INSERT INTO course VALUES(&#39;6-166&#39;, &#39;数字电路&#39;, &#39;856&#39;);
+INSERT INTO course VALUES(&#39;9-888&#39;, &#39;高等数学&#39;, &#39;831&#39;);
+
+-- 添加添加成绩表数据
+INSERT INTO score VALUES(&#39;103&#39;, &#39;3-105&#39;, &#39;92&#39;);
+INSERT INTO score VALUES(&#39;103&#39;, &#39;3-245&#39;, &#39;86&#39;);
+INSERT INTO score VALUES(&#39;103&#39;, &#39;6-166&#39;, &#39;85&#39;);
+INSERT INTO score VALUES(&#39;105&#39;, &#39;3-105&#39;, &#39;88&#39;);
+INSERT INTO score VALUES(&#39;105&#39;, &#39;3-245&#39;, &#39;75&#39;);
+INSERT INTO score VALUES(&#39;105&#39;, &#39;6-166&#39;, &#39;79&#39;);
+INSERT INTO score VALUES(&#39;109&#39;, &#39;3-105&#39;, &#39;76&#39;);
+INSERT INTO score VALUES(&#39;109&#39;, &#39;3-245&#39;, &#39;68&#39;);
+INSERT INTO score VALUES(&#39;109&#39;, &#39;6-166&#39;, &#39;81&#39;);
+
+-- 查看表结构
+SELECT * FROM course;
+SELECT * FROM score;
+SELECT * FROM student;
+SELECT * FROM teacher;
+</code></pre>
+<h3 id="1-到-10"><a href="#1-到-10" class="headerlink" title="1 到 10"></a>1 到 10</h3><pre><code>-- 查询 student 表的所有行
+SELECT * FROM student;
+
+-- 查询 student 表中的 name、sex 和 class 字段的所有行
+SELECT name, sex, class FROM student;
+
+-- 查询 teacher 表中不重复的 department 列
+-- department: 去重查询
+SELECT DISTINCT department FROM teacher;
+
+-- 查询 score 表中成绩在60-80之间的所有行（区间查询和运算符查询）
+-- BETWEEN xx AND xx: 查询区间, AND 表示 &quot;并且&quot;
+SELECT * FROM score WHERE degree BETWEEN 60 AND 80;
+SELECT * FROM score WHERE degree &gt; 60 AND degree &lt; 80;
+
+-- 查询 score 表中成绩为 85, 86 或 88 的行
+-- IN: 查询规定中的多个值
+SELECT * FROM score WHERE degree IN (85, 86, 88);
+
+-- 查询 student 表中 &#39;95031&#39; 班或性别为 &#39;女&#39; 的所有行
+-- or: 表示或者关系
+SELECT * FROM student WHERE class = &#39;95031&#39; or sex = &#39;女&#39;;
+
+-- 以 class 降序的方式查询 student 表的所有行
+-- DESC: 降序，从高到低
+-- ASC（默认）: 升序，从低到高
+SELECT * FROM student ORDER BY class DESC;
+SELECT * FROM student ORDER BY class ASC;
+
+-- 以 c_no 升序、degree 降序查询 score 表的所有行
+SELECT * FROM score ORDER BY c_no ASC, degree DESC;
+
+-- 查询 &quot;95031&quot; 班的学生人数
+-- COUNT: 统计
+SELECT COUNT(*) FROM student WHERE class = &#39;95031&#39;;
+
+-- 查询 score 表中的最高分的学生学号和课程编号（子查询或排序查询）。
+-- (SELECT MAX(degree) FROM score): 子查询，算出最高分
+SELECT s_no, c_no FROM score WHERE degree = (SELECT MAX(degree) FROM score);
+
+--  排序查询
+-- LIMIT r, n: 表示从第r行开始，查询n条数据
+SELECT s_no, c_no, degree FROM score ORDER BY degree DESC LIMIT 0, 1;
+</code></pre>
+<h3 id="分组计算平均成绩"><a href="#分组计算平均成绩" class="headerlink" title="分组计算平均成绩"></a>分组计算平均成绩</h3><p><strong>查询每门课的平均成绩。</strong></p>
+<pre><code>-- AVG: 平均值
+SELECT AVG(degree) FROM score WHERE c_no = &#39;3-105&#39;;
+SELECT AVG(degree) FROM score WHERE c_no = &#39;3-245&#39;;
+SELECT AVG(degree) FROM score WHERE c_no = &#39;6-166&#39;;
+
+-- GROUP BY: 分组查询
+SELECT c_no, AVG(degree) FROM score GROUP BY c_no;
+</code></pre>
+<h3 id="分组条件与模糊查询"><a href="#分组条件与模糊查询" class="headerlink" title="分组条件与模糊查询"></a>分组条件与模糊查询</h3><p><strong>查询<code>score</code> 表中至少有 2 名学生选修，并以 3 开头的课程的平均分数。</strong></p>
+<pre><code>SELECT * FROM score;
+-- c_no 课程编号
++------+-------+--------+
+| s_no | c_no  | degree |
++------+-------+--------+
+| 103  | 3-105 |     92 |
+| 103  | 3-245 |     86 |
+| 103  | 6-166 |     85 |
+| 105  | 3-105 |     88 |
+| 105  | 3-245 |     75 |
+| 105  | 6-166 |     79 |
+| 109  | 3-105 |     76 |
+| 109  | 3-245 |     68 |
+| 109  | 6-166 |     81 |
++------+-------+--------+
+</code></pre>
+<p>分析表发现，至少有 2 名学生选修的课程是 <code>3-105</code> 、<code>3-245</code> 、<code>6-166</code> ，以 3 开头的课程是 <code>3-105</code> 、<code>3-245</code> 。也就是说，我们要查询所有 <code>3-105</code> 和 <code>3-245</code> 的 <code>degree</code> 平均分。</p>
+<pre><code>-- 首先把 c_no, AVG(degree) 通过分组查询出来
+SELECT c_no, AVG(degree) FROM score GROUP BY c_no
++-------+-------------+
+| c_no  | AVG(degree) |
++-------+-------------+
+| 3-105 |     85.3333 |
+| 3-245 |     76.3333 |
+| 6-166 |     81.6667 |
++-------+-------------+
+
+-- 再查询出至少有 2 名学生选修的课程
+-- HAVING: 表示持有
+HAVING COUNT(c_no) &gt;= 2
+
+-- 并且是以 3 开头的课程
+-- LIKE 表示模糊查询，&quot;%&quot; 是一个通配符，匹配 &quot;3&quot; 后面的任意字符。
+AND c_no LIKE &#39;3%&#39;;
+
+-- 把前面的SQL语句拼接起来，
+-- 后面加上一个 COUNT(*)，表示将每个分组的个数也查询出来。
+SELECT c_no, AVG(degree), COUNT(*) FROM score GROUP BY c_no
+HAVING COUNT(c_no) &gt;= 2 AND c_no LIKE &#39;3%&#39;;
++-------+-------------+----------+
+| c_no  | AVG(degree) | COUNT(*) |
++-------+-------------+----------+
+| 3-105 |     85.3333 |        3 |
+| 3-245 |     76.3333 |        3 |
++-------+-------------+----------+
+</code></pre>
+<h3 id="多表查询-1"><a href="#多表查询-1" class="headerlink" title="多表查询 - 1"></a>多表查询 - 1</h3><p><strong>查询所有学生的<code>name</code>，以及该学生在 <code>score</code> 表中对应的 <code>c_no</code> 和 <code>degree</code> 。</strong></p>
+<pre><code>SELECT no, name FROM student;
++-----+-----------+
+| no  | name      |
++-----+-----------+
+| 101 | 曾华      |
+| 102 | 匡明      |
+| 103 | 王丽      |
+| 104 | 李军      |
+| 105 | 王芳      |
+| 106 | 陆军      |
+| 107 | 王尼玛    |
+| 108 | 张全蛋    |
+| 109 | 赵铁柱    |
++-----+-----------+
+
+SELECT s_no, c_no, degree FROM score;
++------+-------+--------+
+| s_no | c_no  | degree |
++------+-------+--------+
+| 103  | 3-105 |     92 |
+| 103  | 3-245 |     86 |
+| 103  | 6-166 |     85 |
+| 105  | 3-105 |     88 |
+| 105  | 3-245 |     75 |
+| 105  | 6-166 |     79 |
+| 109  | 3-105 |     76 |
+| 109  | 3-245 |     68 |
+| 109  | 6-166 |     81 |
++------+-------+--------+
+</code></pre>
+<p>通过分析可以发现，只要把 <code>score</code> 表中的 <code>s_no</code> 字段值替换成 <code>student</code> 表中对应的 <code>name</code> 字段值就可以了，如何做呢？</p>
+<pre><code>-- FROM...: 表示从 student, score 表中查询
+-- WHERE 的条件表示为，只有在 student.no 和 score.s_no 相等时才显示出来。
+SELECT name, c_no, degree FROM student, score 
+WHERE student.no = score.s_no;
++-----------+-------+--------+
+| name      | c_no  | degree |
++-----------+-------+--------+
+| 王丽      | 3-105 |     92 |
+| 王丽      | 3-245 |     86 |
+| 王丽      | 6-166 |     85 |
+| 王芳      | 3-105 |     88 |
+| 王芳      | 3-245 |     75 |
+| 王芳      | 6-166 |     79 |
+| 赵铁柱    | 3-105 |     76 |
+| 赵铁柱    | 3-245 |     68 |
+| 赵铁柱    | 6-166 |     81 |
++-----------+-------+--------+
+</code></pre>
+<h3 id="多表查询-2"><a href="#多表查询-2" class="headerlink" title="多表查询 - 2"></a>多表查询 - 2</h3><p><strong>查询所有学生的<code>no</code> 、课程名称 ( <code>course</code> 表中的 <code>name</code> ) 和成绩 ( <code>score</code> 表中的 <code>degree</code> ) 列。</strong></p>
+<p>只有 <code>score</code> 关联学生的 <code>no</code> ，因此只要查询 <code>score</code> 表，就能找出所有和学生相关的 <code>no</code> 和 <code>degree</code> ：</p>
+<pre><code>SELECT s_no, c_no, degree FROM score;
++------+-------+--------+
+| s_no | c_no  | degree |
++------+-------+--------+
+| 103  | 3-105 |     92 |
+| 103  | 3-245 |     86 |
+| 103  | 6-166 |     85 |
+| 105  | 3-105 |     88 |
+| 105  | 3-245 |     75 |
+| 105  | 6-166 |     79 |
+| 109  | 3-105 |     76 |
+| 109  | 3-245 |     68 |
+| 109  | 6-166 |     81 |
++------+-------+--------+
+</code></pre>
+<p>然后查询 <code>course</code> 表：</p>
+<pre><code>+-------+-----------------+
+| no    | name            |
++-------+-----------------+
+| 3-105 | 计算机导论      |
+| 3-245 | 操作系统        |
+| 6-166 | 数字电路        |
+| 9-888 | 高等数学        |
++-------+-----------------+
+</code></pre>
+<p>只要把 <code>score</code> 表中的 <code>c_no</code> 替换成 <code>course</code> 表中对应的 <code>name</code> 字段值就可以了。</p>
+<pre><code>-- 增加一个查询字段 name，分别从 score、course 这两个表中查询。
+-- as 表示取一个该字段的别名。
+SELECT s_no, name as c_name, degree FROM score, course
+WHERE score.c_no = course.no;
++------+-----------------+--------+
+| s_no | c_name          | degree |
++------+-----------------+--------+
+| 103  | 计算机导论      |     92 |
+| 105  | 计算机导论      |     88 |
+| 109  | 计算机导论      |     76 |
+| 103  | 操作系统        |     86 |
+| 105  | 操作系统        |     75 |
+| 109  | 操作系统        |     68 |
+| 103  | 数字电路        |     85 |
+| 105  | 数字电路        |     79 |
+| 109  | 数字电路        |     81 |
++------+-----------------+--------+
+</code></pre>
+<h3 id="三表关联查询"><a href="#三表关联查询" class="headerlink" title="三表关联查询"></a>三表关联查询</h3><p><strong>查询所有学生的<code>name</code> 、课程名 ( <code>course</code> 表中的 <code>name</code> ) 和 <code>degree</code> 。</strong></p>
+<p>只有 <code>score</code> 表中关联学生的学号和课堂号，我们只要围绕着 <code>score</code> 这张表查询就好了。</p>
+<pre><code>SELECT * FROM score;
++------+-------+--------+
+| s_no | c_no  | degree |
++------+-------+--------+
+| 103  | 3-105 |     92 |
+| 103  | 3-245 |     86 |
+| 103  | 6-166 |     85 |
+| 105  | 3-105 |     88 |
+| 105  | 3-245 |     75 |
+| 105  | 6-166 |     79 |
+| 109  | 3-105 |     76 |
+| 109  | 3-245 |     68 |
+| 109  | 6-166 |     81 |
++------+-------+--------+
+</code></pre>
+<p>只要把 <code>s_no</code> 和 <code>c_no</code> 替换成 <code>student</code> 和 <code>srouse</code> 表中对应的 <code>name</code> 字段值就好了。</p>
+<p>首先把 <code>s_no</code> 替换成 <code>student</code> 表中的 <code>name</code> 字段：</p>
+<pre><code>SELECT name, c_no, degree FROM student, score WHERE student.no = score.s_no;
++-----------+-------+--------+
+| name      | c_no  | degree |
++-----------+-------+--------+
+| 王丽      | 3-105 |     92 |
+| 王丽      | 3-245 |     86 |
+| 王丽      | 6-166 |     85 |
+| 王芳      | 3-105 |     88 |
+| 王芳      | 3-245 |     75 |
+| 王芳      | 6-166 |     79 |
+| 赵铁柱    | 3-105 |     76 |
+| 赵铁柱    | 3-245 |     68 |
+| 赵铁柱    | 6-166 |     81 |
++-----------+-------+--------+
+</code></pre>
+<p>再把 <code>c_no</code> 替换成 <code>course</code> 表中的 <code>name</code> 字段：</p>
+<pre><code>-- 课程表
+SELECT no, name FROM course;
++-------+-----------------+
+| no    | name            |
++-------+-----------------+
+| 3-105 | 计算机导论      |
+| 3-245 | 操作系统        |
+| 6-166 | 数字电路        |
+| 9-888 | 高等数学        |
++-------+-----------------+
+
+-- 由于字段名存在重复，使用 &quot;表名.字段名 as 别名&quot; 代替。
+SELECT student.name as s_name, course.name as c_name, degree 
+FROM student, score, course
+WHERE student.NO = score.s_no
+AND score.c_no = course.no;
+</code></pre>
+<h3 id="子查询加分组求平均分"><a href="#子查询加分组求平均分" class="headerlink" title="子查询加分组求平均分"></a>子查询加分组求平均分</h3><p><strong>查询<code>95031</code> 班学生每门课程的平均成绩。</strong></p>
+<p>在 <code>score</code> 表中根据 <code>student</code> 表的学生编号筛选出学生的课堂号和成绩：</p>
+<pre><code>-- IN (..): 将筛选出的学生号当做 s_no 的条件查询
+SELECT s_no, c_no, degree FROM score
+WHERE s_no IN (SELECT no FROM student WHERE class = &#39;95031&#39;);
++------+-------+--------+
+| s_no | c_no  | degree |
++------+-------+--------+
+| 105  | 3-105 |     88 |
+| 105  | 3-245 |     75 |
+| 105  | 6-166 |     79 |
+| 109  | 3-105 |     76 |
+| 109  | 3-245 |     68 |
+| 109  | 6-166 |     81 |
++------+-------+--------+
+</code></pre>
+<p>这时只要将 <code>c_no</code> 分组一下就能得出 <code>95031</code> 班学生每门课的平均成绩：</p>
+<pre><code>SELECT c_no, AVG(degree) FROM score
+WHERE s_no IN (SELECT no FROM student WHERE class = &#39;95031&#39;)
+GROUP BY c_no;
++-------+-------------+
+| c_no  | AVG(degree) |
++-------+-------------+
+| 3-105 |     82.0000 |
+| 3-245 |     71.5000 |
+| 6-166 |     80.0000 |
++-------+-------------+
+</code></pre>
+<h3 id="子查询-1"><a href="#子查询-1" class="headerlink" title="子查询 - 1"></a>子查询 - 1</h3><p><strong>查询在<code>3-105</code> 课程中，所有成绩高于 <code>109</code> 号同学的记录。</strong></p>
+<p>首先筛选出课堂号为 <code>3-105</code> ，在找出所有成绩高于 <code>109</code> 号同学的的行。</p>
+<pre><code>SELECT * FROM score 
+WHERE c_no = &#39;3-105&#39;
+AND degree &gt; (SELECT degree FROM score WHERE s_no = &#39;109&#39; AND c_no = &#39;3-105&#39;);
+</code></pre>
+<h3 id="子查询-2"><a href="#子查询-2" class="headerlink" title="子查询 - 2"></a>子查询 - 2</h3><p><strong>查询所有成绩高于<code>109</code> 号同学的 <code>3-105</code> 课程成绩记录。</strong></p>
+<pre><code>-- 不限制课程号，只要成绩大于109号同学的3-105课程成绩就可以。
+SELECT * FROM score
+WHERE degree &gt; (SELECT degree FROM score WHERE s_no = &#39;109&#39; AND c_no = &#39;3-105&#39;);
+</code></pre>
+<h3 id="YEAR-函数与带-IN-关键字查询"><a href="#YEAR-函数与带-IN-关键字查询" class="headerlink" title="YEAR 函数与带 IN 关键字查询"></a>YEAR 函数与带 IN 关键字查询</h3><p><strong>查询所有和<code>101</code> 、<code>108</code> 号学生同年出生的 <code>no</code> 、<code>name</code> 、<code>birthday</code> 列。</strong></p>
+<pre><code>-- YEAR(..): 取出日期中的年份
+SELECT no, name, birthday FROM student
+WHERE YEAR(birthday) IN (SELECT YEAR(birthday) FROM student WHERE no IN (101, 108));
+</code></pre>
+<h3 id="多层嵌套子查询"><a href="#多层嵌套子查询" class="headerlink" title="多层嵌套子查询"></a>多层嵌套子查询</h3><p><strong>查询<code>&#39;张旭&#39;</code> 教师任课的学生成绩表。</strong></p>
+<p>首先找到教师编号：</p>
+<pre><code>SELECT NO FROM teacher WHERE NAME = &#39;张旭&#39;
+</code></pre>
+<p>通过 <code>sourse</code> 表找到该教师课程号：</p>
+<pre><code>SELECT NO FROM course WHERE t_no = ( SELECT NO FROM teacher WHERE NAME = &#39;张旭&#39; );
+</code></pre>
+<p>通过筛选出的课程号查询成绩表：</p>
+<pre><code>SELECT * FROM score WHERE c_no = (
+    SELECT no FROM course WHERE t_no = ( 
+        SELECT no FROM teacher WHERE NAME = &#39;张旭&#39; 
+    )
+);
+</code></pre>
+<h3 id="多表查询"><a href="#多表查询" class="headerlink" title="多表查询"></a>多表查询</h3><p><strong>查询某选修课程多于5个同学的教师姓名。</strong></p>
+<p>首先在 <code>teacher</code> 表中，根据 <code>no</code> 字段来判断该教师的同一门课程是否有至少5名学员选修：</p>
+<pre><code>-- 查询 teacher 表
+SELECT no, name FROM teacher;
++-----+--------+
+| no  | name   |
++-----+--------+
+| 804 | 李诚   |
+| 825 | 王萍   |
+| 831 | 刘冰   |
+| 856 | 张旭   |
++-----+--------+
+
+SELECT name FROM teacher WHERE no IN (
+    -- 在这里找到对应的条件
+);
+</code></pre>
+<p>查看和教师编号有有关的表的信息：</p>
+<pre><code>SELECT * FROM course;
+-- t_no: 教师编号
++-------+-----------------+------+
+| no    | name            | t_no |
++-------+-----------------+------+
+| 3-105 | 计算机导论      | 825  |
+| 3-245 | 操作系统        | 804  |
+| 6-166 | 数字电路        | 856  |
+| 9-888 | 高等数学        | 831  |
++-------+-----------------+------+
+</code></pre>
+<p>我们已经找到和教师编号有关的字段就在 <code>course</code> 表中，但是还无法知道哪门课程至少有5名学生选修，所以还需要根据 <code>score</code> 表来查询：</p>
+<pre><code>-- 在此之前向 score 插入一些数据，以便丰富查询条件。
+INSERT INTO score VALUES (&#39;101&#39;, &#39;3-105&#39;, &#39;90&#39;);
+INSERT INTO score VALUES (&#39;102&#39;, &#39;3-105&#39;, &#39;91&#39;);
+INSERT INTO score VALUES (&#39;104&#39;, &#39;3-105&#39;, &#39;89&#39;);
+
+-- 查询 score 表
+SELECT * FROM score;
++------+-------+--------+
+| s_no | c_no  | degree |
++------+-------+--------+
+| 101  | 3-105 |     90 |
+| 102  | 3-105 |     91 |
+| 103  | 3-105 |     92 |
+| 103  | 3-245 |     86 |
+| 103  | 6-166 |     85 |
+| 104  | 3-105 |     89 |
+| 105  | 3-105 |     88 |
+| 105  | 3-245 |     75 |
+| 105  | 6-166 |     79 |
+| 109  | 3-105 |     76 |
+| 109  | 3-245 |     68 |
+| 109  | 6-166 |     81 |
++------+-------+--------+
+
+-- 在 score 表中将 c_no 作为分组，并且限制 c_no 持有至少 5 条数据。
+SELECT c_no FROM score GROUP BY c_no HAVING COUNT(*) &gt; 5;
++-------+
+| c_no  |
++-------+
+| 3-105 |
++-------+
+</code></pre>
+<p>根据筛选出来的课程号，找出在某课程中，拥有至少5名学员的教师编号：</p>
+<pre><code>SELECT t_no FROM course WHERE no IN (
+    SELECT c_no FROM score GROUP BY c_no HAVING COUNT(*) &gt; 5
+);
++------+
+| t_no |
++------+
+| 825  |
++------+
+</code></pre>
+<p>在 <code>teacher</code> 表中，根据筛选出来的教师编号找到教师姓名：</p>
+<pre><code>SELECT name FROM teacher WHERE no IN (
+    -- 最终条件
+    SELECT t_no FROM course WHERE no IN (
+        SELECT c_no FROM score GROUP BY c_no HAVING COUNT(*) &gt; 5
+    )
+);
+</code></pre>
+<h3 id="子查询-3"><a href="#子查询-3" class="headerlink" title="子查询 - 3"></a>子查询 - 3</h3><p><strong>查询 “计算机系” 课程的成绩表。</strong></p>
+<p>思路是，先找出 <code>course</code> 表中所有 <code>计算机系</code> 课程的编号，然后根据这个编号查询 <code>score</code> 表。</p>
+<pre><code>-- 通过 teacher 表查询所有 `计算机系` 的教师编号
+SELECT no, name, department FROM teacher WHERE department = &#39;计算机系&#39;
++-----+--------+--------------+
+| no  | name   | department   |
++-----+--------+--------------+
+| 804 | 李诚   | 计算机系     |
+| 825 | 王萍   | 计算机系     |
++-----+--------+--------------+
+
+-- 通过 course 表查询该教师的课程编号
+SELECT no FROM course WHERE t_no IN (
+    SELECT no FROM teacher WHERE department = &#39;计算机系&#39;
+);
++-------+
+| no    |
++-------+
+| 3-245 |
+| 3-105 |
++-------+
+
+-- 根据筛选出来的课程号查询成绩表
+SELECT * FROM score WHERE c_no IN (
+    SELECT no FROM course WHERE t_no IN (
+        SELECT no FROM teacher WHERE department = &#39;计算机系&#39;
+    )
+);
++------+-------+--------+
+| s_no | c_no  | degree |
++------+-------+--------+
+| 103  | 3-245 |     86 |
+| 105  | 3-245 |     75 |
+| 109  | 3-245 |     68 |
+| 101  | 3-105 |     90 |
+| 102  | 3-105 |     91 |
+| 103  | 3-105 |     92 |
+| 104  | 3-105 |     89 |
+| 105  | 3-105 |     88 |
+| 109  | 3-105 |     76 |
++------+-------+--------+
+</code></pre>
+<h3 id="UNION-和-NOTIN-的使用"><a href="#UNION-和-NOTIN-的使用" class="headerlink" title="UNION 和 NOTIN 的使用"></a>UNION 和 NOTIN 的使用</h3><p><strong>查询<code>计算机系</code> 与 <code>电子工程系</code> 中的不同职称的教师。</strong></p>
+<pre><code>-- NOT: 代表逻辑非
+SELECT * FROM teacher WHERE department = &#39;计算机系&#39; AND profession NOT IN (
+    SELECT profession FROM teacher WHERE department = &#39;电子工程系&#39;
+)
+-- 合并两个集
+UNION
+SELECT * FROM teacher WHERE department = &#39;电子工程系&#39; AND profession NOT IN (
+    SELECT profession FROM teacher WHERE department = &#39;计算机系&#39;
+);
+</code></pre>
+<h3 id="ANY-表示至少一个-DESC-降序"><a href="#ANY-表示至少一个-DESC-降序" class="headerlink" title="ANY 表示至少一个 - DESC ( 降序 )"></a>ANY 表示至少一个 - DESC ( 降序 )</h3><p><strong>查询课程<code>3-105</code> 且成绩 <em>至少</em> 高于 <code>3-245</code> 的 <code>score</code> 表。</strong></p>
+<pre><code>SELECT * FROM score WHERE c_no = &#39;3-105&#39;;
++------+-------+--------+
+| s_no | c_no  | degree |
++------+-------+--------+
+| 101  | 3-105 |     90 |
+| 102  | 3-105 |     91 |
+| 103  | 3-105 |     92 |
+| 104  | 3-105 |     89 |
+| 105  | 3-105 |     88 |
+| 109  | 3-105 |     76 |
++------+-------+--------+
+
+SELECT * FROM score WHERE c_no = &#39;3-245&#39;;
++------+-------+--------+
+| s_no | c_no  | degree |
++------+-------+--------+
+| 103  | 3-245 |     86 |
+| 105  | 3-245 |     75 |
+| 109  | 3-245 |     68 |
++------+-------+--------+
+
+-- ANY: 符合SQL语句中的任意条件。
+-- 也就是说，在 3-105 成绩中，只要有一个大于从 3-245 筛选出来的任意行就符合条件，
+-- 最后根据降序查询结果。
+SELECT * FROM score WHERE c_no = &#39;3-105&#39; AND degree &gt; ANY(
+    SELECT degree FROM score WHERE c_no = &#39;3-245&#39;
+) ORDER BY degree DESC;
++------+-------+--------+
+| s_no | c_no  | degree |
++------+-------+--------+
+| 103  | 3-105 |     92 |
+| 102  | 3-105 |     91 |
+| 101  | 3-105 |     90 |
+| 104  | 3-105 |     89 |
+| 105  | 3-105 |     88 |
+| 109  | 3-105 |     76 |
++------+-------+--------+
+</code></pre>
+<h3 id="表示所有的-ALL"><a href="#表示所有的-ALL" class="headerlink" title="表示所有的 ALL"></a>表示所有的 ALL</h3><p><strong>查询课程<code>3-105</code> 且成绩高于 <code>3-245</code> 的 <code>score</code> 表。</strong></p>
+<pre><code>-- 只需对上一道题稍作修改。
+-- ALL: 符合SQL语句中的所有条件。
+-- 也就是说，在 3-105 每一行成绩中，都要大于从 3-245 筛选出来全部行才算符合条件。
+SELECT * FROM score WHERE c_no = &#39;3-105&#39; AND degree &gt; ALL(
+    SELECT degree FROM score WHERE c_no = &#39;3-245&#39;
+);
++------+-------+--------+
+| s_no | c_no  | degree |
++------+-------+--------+
+| 101  | 3-105 |     90 |
+| 102  | 3-105 |     91 |
+| 103  | 3-105 |     92 |
+| 104  | 3-105 |     89 |
+| 105  | 3-105 |     88 |
++------+-------+--------+
+</code></pre>
+<h3 id="复制表的数据作为条件查询"><a href="#复制表的数据作为条件查询" class="headerlink" title="复制表的数据作为条件查询"></a>复制表的数据作为条件查询</h3><p><strong>查询某课程成绩比该课程平均成绩低的<code>score</code> 表。</strong></p>
+<pre><code>-- 查询平均分
+SELECT c_no, AVG(degree) FROM score GROUP BY c_no;
++-------+-------------+
+| c_no  | AVG(degree) |
++-------+-------------+
+| 3-105 |     87.6667 |
+| 3-245 |     76.3333 |
+| 6-166 |     81.6667 |
++-------+-------------+
+
+-- 查询 score 表
+SELECT degree FROM score;
++--------+
+| degree |
++--------+
+|     90 |
+|     91 |
+|     92 |
+|     86 |
+|     85 |
+|     89 |
+|     88 |
+|     75 |
+|     79 |
+|     76 |
+|     68 |
+|     81 |
++--------+
+
+-- 将表 b 作用于表 a 中查询数据
+-- score a (b): 将表声明为 a (b)，
+-- 如此就能用 a.c_no = b.c_no 作为条件执行查询了。
+SELECT * FROM score a WHERE degree &lt; (
+    (SELECT AVG(degree) FROM score b WHERE a.c_no = b.c_no)
+);
++------+-------+--------+
+| s_no | c_no  | degree |
++------+-------+--------+
+| 105  | 3-245 |     75 |
+| 105  | 6-166 |     79 |
+| 109  | 3-105 |     76 |
+| 109  | 3-245 |     68 |
+| 109  | 6-166 |     81 |
++------+-------+--------+
+</code></pre>
+<h3 id="子查询-4"><a href="#子查询-4" class="headerlink" title="子查询 - 4"></a>子查询 - 4</h3><p><strong>查询所有任课 ( 在<code>course</code> 表里有课程 ) 教师的 <code>name</code> 和 <code>department</code></strong> 。</p>
+<pre><code>SELECT name, department FROM teacher WHERE no IN (SELECT t_no FROM course);
++--------+-----------------+
+| name   | department      |
++--------+-----------------+
+| 李诚   | 计算机系        |
+| 王萍   | 计算机系        |
+| 刘冰   | 电子工程系      |
+| 张旭   | 电子工程系      |
++--------+-----------------+
+</code></pre>
+<h3 id="条件加组筛选"><a href="#条件加组筛选" class="headerlink" title="条件加组筛选"></a>条件加组筛选</h3><p><strong>查询<code>student</code> 表中至少有 2 名男生的 <code>class</code> 。</strong></p>
+<pre><code>-- 查看学生表信息
+SELECT * FROM student;
++-----+-----------+-----+------------+-------+
+| no  | name      | sex | birthday   | class |
++-----+-----------+-----+------------+-------+
+| 101 | 曾华      | 男  | 1977-09-01 | 95033 |
+| 102 | 匡明      | 男  | 1975-10-02 | 95031 |
+| 103 | 王丽      | 女  | 1976-01-23 | 95033 |
+| 104 | 李军      | 男  | 1976-02-20 | 95033 |
+| 105 | 王芳      | 女  | 1975-02-10 | 95031 |
+| 106 | 陆军      | 男  | 1974-06-03 | 95031 |
+| 107 | 王尼玛    | 男  | 1976-02-20 | 95033 |
+| 108 | 张全蛋    | 男  | 1975-02-10 | 95031 |
+| 109 | 赵铁柱    | 男  | 1974-06-03 | 95031 |
+| 110 | 张飞      | 男  | 1974-06-03 | 95038 |
++-----+-----------+-----+------------+-------+
+
+-- 只查询性别为男，然后按 class 分组，并限制 class 行大于 1。
+SELECT class FROM student WHERE sex = &#39;男&#39; GROUP BY class HAVING COUNT(*) &gt; 1;
++-------+
+| class |
++-------+
+| 95033 |
+| 95031 |
++-------+
+</code></pre>
+<h3 id="NOTLIKE-模糊查询取反"><a href="#NOTLIKE-模糊查询取反" class="headerlink" title="NOTLIKE 模糊查询取反"></a>NOTLIKE 模糊查询取反</h3><p><strong>查询<code>student</code> 表中不姓 “王” 的同学记录。</strong></p>
+<pre><code>-- NOT: 取反
+-- LIKE: 模糊查询
+mysql&gt; SELECT * FROM student WHERE name NOT LIKE &#39;王%&#39;;
++-----+-----------+-----+------------+-------+
+| no  | name      | sex | birthday   | class |
++-----+-----------+-----+------------+-------+
+| 101 | 曾华      | 男  | 1977-09-01 | 95033 |
+| 102 | 匡明      | 男  | 1975-10-02 | 95031 |
+| 104 | 李军      | 男  | 1976-02-20 | 95033 |
+| 106 | 陆军      | 男  | 1974-06-03 | 95031 |
+| 108 | 张全蛋    | 男  | 1975-02-10 | 95031 |
+| 109 | 赵铁柱    | 男  | 1974-06-03 | 95031 |
+| 110 | 张飞      | 男  | 1974-06-03 | 95038 |
++-----+-----------+-----+------------+-------+
+</code></pre>
+<h3 id="YEAR-与-NOW-函数"><a href="#YEAR-与-NOW-函数" class="headerlink" title="YEAR 与 NOW 函数"></a>YEAR 与 NOW 函数</h3><p><strong>查询<code>student</code> 表中每个学生的姓名和年龄。</strong></p>
+<pre><code>-- 使用函数 YEAR(NOW()) 计算出当前年份，减去出生年份后得出年龄。
+SELECT name, YEAR(NOW()) - YEAR(birthday) as age FROM student;
++-----------+------+
+| name      | age  |
++-----------+------+
+| 曾华      |   42 |
+| 匡明      |   44 |
+| 王丽      |   43 |
+| 李军      |   43 |
+| 王芳      |   44 |
+| 陆军      |   45 |
+| 王尼玛    |   43 |
+| 张全蛋    |   44 |
+| 赵铁柱    |   45 |
+| 张飞      |   45 |
++-----------+------+
+</code></pre>
+<h3 id="MAX-与-MIN-函数"><a href="#MAX-与-MIN-函数" class="headerlink" title="MAX 与 MIN 函数"></a>MAX 与 MIN 函数</h3><p><strong>查询<code>student</code> 表中最大和最小的 <code>birthday</code> 值。</strong></p>
+<pre><code>SELECT MAX(birthday), MIN(birthday) FROM student;
++---------------+---------------+
+| MAX(birthday) | MIN(birthday) |
++---------------+---------------+
+| 1977-09-01    | 1974-06-03    |
++---------------+---------------+
+</code></pre>
+<h3 id="多段排序"><a href="#多段排序" class="headerlink" title="多段排序"></a>多段排序</h3><p><strong>以<code>class</code> 和 <code>birthday</code> 从大到小的顺序查询 <code>student</code> 表。</strong></p>
+<pre><code>SELECT * FROM student ORDER BY class DESC, birthday;
++-----+-----------+-----+------------+-------+
+| no  | name      | sex | birthday   | class |
++-----+-----------+-----+------------+-------+
+| 110 | 张飞      | 男  | 1974-06-03 | 95038 |
+| 103 | 王丽      | 女  | 1976-01-23 | 95033 |
+| 104 | 李军      | 男  | 1976-02-20 | 95033 |
+| 107 | 王尼玛    | 男  | 1976-02-20 | 95033 |
+| 101 | 曾华      | 男  | 1977-09-01 | 95033 |
+| 106 | 陆军      | 男  | 1974-06-03 | 95031 |
+| 109 | 赵铁柱    | 男  | 1974-06-03 | 95031 |
+| 105 | 王芳      | 女  | 1975-02-10 | 95031 |
+| 108 | 张全蛋    | 男  | 1975-02-10 | 95031 |
+| 102 | 匡明      | 男  | 1975-10-02 | 95031 |
++-----+-----------+-----+------------+-------+
+</code></pre>
+<h3 id="子查询-5"><a href="#子查询-5" class="headerlink" title="子查询 - 5"></a>子查询 - 5</h3><p><strong>查询 “男” 教师及其所上的课程。</strong></p>
+<pre><code>SELECT * FROM course WHERE t_no in (SELECT no FROM teacher WHERE sex = &#39;男&#39;);
++-------+--------------+------+
+| no    | name         | t_no |
++-------+--------------+------+
+| 3-245 | 操作系统     | 804  |
+| 6-166 | 数字电路     | 856  |
++-------+--------------+------+
+</code></pre>
+<h3 id="MAX-函数与子查询"><a href="#MAX-函数与子查询" class="headerlink" title="MAX 函数与子查询"></a>MAX 函数与子查询</h3><p><strong>查询最高分同学的<code>score</code> 表。</strong></p>
+<pre><code>-- 找出最高成绩（该查询只能有一个结果）
+SELECT MAX(degree) FROM score;
+
+-- 根据上面的条件筛选出所有最高成绩表，
+-- 该查询可能有多个结果，假设 degree 值多次符合条件。
+SELECT * FROM score WHERE degree = (SELECT MAX(degree) FROM score);
++------+-------+--------+
+| s_no | c_no  | degree |
++------+-------+--------+
+| 103  | 3-105 |     92 |
++------+-------+--------+
+</code></pre>
+<h3 id="子查询-6"><a href="#子查询-6" class="headerlink" title="子查询 - 6"></a>子查询 - 6</h3><p><strong>查询和 “李军” 同性别的所有同学<code>name</code> 。</strong></p>
+<pre><code>-- 首先将李军的性别作为条件取出来
+SELECT sex FROM student WHERE name = &#39;李军&#39;;
++-----+
+| sex |
++-----+
+| 男  |
++-----+
+
+-- 根据性别查询 name 和 sex
+SELECT name, sex FROM student WHERE sex = (
+    SELECT sex FROM student WHERE name = &#39;李军&#39;
+);
++-----------+-----+
+| name      | sex |
++-----------+-----+
+| 曾华      | 男  |
+| 匡明      | 男  |
+| 李军      | 男  |
+| 陆军      | 男  |
+| 王尼玛    | 男  |
+| 张全蛋    | 男  |
+| 赵铁柱    | 男  |
+| 张飞      | 男  |
++-----------+-----+
+</code></pre>
+<h3 id="子查询-7"><a href="#子查询-7" class="headerlink" title="子查询 - 7"></a>子查询 - 7</h3><p><strong>查询和 “李军” 同性别且同班的同学<code>name</code> 。</strong></p>
+<pre><code>SELECT name, sex, class FROM student WHERE sex = (
+    SELECT sex FROM student WHERE name = &#39;李军&#39;
+) AND class = (
+    SELECT class FROM student WHERE name = &#39;李军&#39;
+);
++-----------+-----+-------+
+| name      | sex | class |
++-----------+-----+-------+
+| 曾华      | 男  | 95033 |
+| 李军      | 男  | 95033 |
+| 王尼玛    | 男  | 95033 |
++-----------+-----+-------+
+</code></pre>
+<h3 id="子查询-8"><a href="#子查询-8" class="headerlink" title="子查询 - 8"></a>子查询 - 8</h3><p><strong>查询所有选修 “计算机导论” 课程的 “男” 同学成绩表。</strong></p>
+<p>需要的 “计算机导论” 和性别为 “男” 的编号可以在 <code>course</code> 和 <code>student</code> 表中找到。</p>
+<pre><code>SELECT * FROM score WHERE c_no = (
+    SELECT no FROM course WHERE name = &#39;计算机导论&#39;
+) AND s_no IN (
+    SELECT no FROM student WHERE sex = &#39;男&#39;
+);
++------+-------+--------+
+| s_no | c_no  | degree |
++------+-------+--------+
+| 101  | 3-105 |     90 |
+| 102  | 3-105 |     91 |
+| 104  | 3-105 |     89 |
+| 109  | 3-105 |     76 |
++------+-------+--------+
+</code></pre>
+<h3 id="按等级查询"><a href="#按等级查询" class="headerlink" title="按等级查询"></a>按等级查询</h3><p>建立一个 <code>grade</code> 表代表学生的成绩等级，并插入数据：</p>
+<pre><code>CREATE TABLE grade (
+    low INT(3),
+    upp INT(3),
+    grade char(1)
+);
+
+INSERT INTO grade VALUES (90, 100, &#39;A&#39;);
+INSERT INTO grade VALUES (80, 89, &#39;B&#39;);
+INSERT INTO grade VALUES (70, 79, &#39;C&#39;);
+INSERT INTO grade VALUES (60, 69, &#39;D&#39;);
+INSERT INTO grade VALUES (0, 59, &#39;E&#39;);
+
+SELECT * FROM grade;
++------+------+-------+
+| low  | upp  | grade |
++------+------+-------+
+|   90 |  100 | A     |
+|   80 |   89 | B     |
+|   70 |   79 | C     |
+|   60 |   69 | D     |
+|    0 |   59 | E     |
++------+------+-------+
+</code></pre>
+<p><strong>查询所有学生的<code>s_no</code> 、<code>c_no</code> 和 <code>grade</code> 列。</strong></p>
+<p>思路是，使用区间 ( <code>BETWEEN</code> ) 查询，判断学生的成绩 ( <code>degree</code> ) 在 <code>grade</code> 表的 <code>low</code> 和 <code>upp</code> 之间。</p>
+<pre><code>SELECT s_no, c_no, grade FROM score, grade 
+WHERE degree BETWEEN low AND upp;
++------+-------+-------+
+| s_no | c_no  | grade |
++------+-------+-------+
+| 101  | 3-105 | A     |
+| 102  | 3-105 | A     |
+| 103  | 3-105 | A     |
+| 103  | 3-245 | B     |
+| 103  | 6-166 | B     |
+| 104  | 3-105 | B     |
+| 105  | 3-105 | B     |
+| 105  | 3-245 | C     |
+| 105  | 6-166 | C     |
+| 109  | 3-105 | C     |
+| 109  | 3-245 | D     |
+| 109  | 6-166 | B     |
++------+-------+-------+
+</code></pre>
+<h3 id="连接查询"><a href="#连接查询" class="headerlink" title="连接查询"></a>连接查询</h3><p>准备用于测试连接查询的数据：</p>
+<pre><code>CREATE DATABASE testJoin;
+
+CREATE TABLE person (
+    id INT,
+    name VARCHAR(20),
+    cardId INT
+);
+
+CREATE TABLE card (
+    id INT,
+    name VARCHAR(20)
+);
+
+INSERT INTO card VALUES (1, &#39;饭卡&#39;), (2, &#39;建行卡&#39;), (3, &#39;农行卡&#39;), (4, &#39;工商卡&#39;), (5, &#39;邮政卡&#39;);
+SELECT * FROM card;
++------+-----------+
+| id   | name      |
++------+-----------+
+|    1 | 饭卡      |
+|    2 | 建行卡    |
+|    3 | 农行卡    |
+|    4 | 工商卡    |
+|    5 | 邮政卡    |
++------+-----------+
+
+INSERT INTO person VALUES (1, &#39;张三&#39;, 1), (2, &#39;李四&#39;, 3), (3, &#39;王五&#39;, 6);
+SELECT * FROM person;
++------+--------+--------+
+| id   | name   | cardId |
++------+--------+--------+
+|    1 | 张三   |      1 |
+|    2 | 李四   |      3 |
+|    3 | 王五   |      6 |
++------+--------+--------+
+</code></pre>
+<p>分析两张表发现，<code>person</code> 表并没有为 <code>cardId</code> 字段设置一个在 <code>card</code> 表中对应的 <code>id</code> 外键。如果设置了的话，<code>person</code> 中 <code>cardId</code> 字段值为 <code>6</code> 的行就插不进去，因为该 <code>cardId</code> 值在 <code>card</code> 表中并没有。</p>
+<h4 id="内连接"><a href="#内连接" class="headerlink" title="内连接"></a>内连接</h4><p>要查询这两张表中有关系的数据，可以使用 <code>INNER JOIN</code> ( 内连接 ) 将它们连接在一起。</p>
+<pre><code>-- INNER JOIN: 表示为内连接，将两张表拼接在一起。
+-- on: 表示要执行某个条件。
+SELECT * FROM person INNER JOIN card on person.cardId = card.id;
++------+--------+--------+------+-----------+
+| id   | name   | cardId | id   | name      |
++------+--------+--------+------+-----------+
+|    1 | 张三   |      1 |    1 | 饭卡      |
+|    2 | 李四   |      3 |    3 | 农行卡    |
++------+--------+--------+------+-----------+
+
+-- 将 INNER 关键字省略掉，结果也是一样的。
+-- SELECT * FROM person JOIN card on person.cardId = card.id;
+</code></pre>
+<blockquote>
+<p>注意：<code>card</code> 的整张表被连接到了右边。</p>
+</blockquote>
+<h4 id="左外连接"><a href="#左外连接" class="headerlink" title="左外连接"></a>左外连接</h4><p>完整显示左边的表 ( <code>person</code> ) ，右边的表如果符合条件就显示，不符合则补 <code>NULL</code> 。</p>
+<pre><code>-- LEFT JOIN 也叫做 LEFT OUTER JOIN，用这两种方式的查询结果是一样的。
+SELECT * FROM person LEFT JOIN card on person.cardId = card.id;
++------+--------+--------+------+-----------+
+| id   | name   | cardId | id   | name      |
++------+--------+--------+------+-----------+
+|    1 | 张三   |      1 |    1 | 饭卡      |
+|    2 | 李四   |      3 |    3 | 农行卡    |
+|    3 | 王五   |      6 | NULL | NULL      |
++------+--------+--------+------+-----------+
+</code></pre>
+<h4 id="右外链接"><a href="#右外链接" class="headerlink" title="右外链接"></a>右外链接</h4><p>完整显示右边的表 ( <code>card</code> ) ，左边的表如果符合条件就显示，不符合则补 <code>NULL</code> 。</p>
+<pre><code>SELECT * FROM person RIGHT JOIN card on person.cardId = card.id;
++------+--------+--------+------+-----------+
+| id   | name   | cardId | id   | name      |
++------+--------+--------+------+-----------+
+|    1 | 张三   |      1 |    1 | 饭卡      |
+|    2 | 李四   |      3 |    3 | 农行卡    |
+| NULL | NULL   |   NULL |    2 | 建行卡    |
+| NULL | NULL   |   NULL |    4 | 工商卡    |
+| NULL | NULL   |   NULL |    5 | 邮政卡    |
++------+--------+--------+------+-----------+
+</code></pre>
+<h4 id="全外链接"><a href="#全外链接" class="headerlink" title="全外链接"></a>全外链接</h4><p>完整显示两张表的全部数据。</p>
+<pre><code>-- MySQL 不支持这种语法的全外连接
+-- SELECT * FROM person FULL JOIN card on person.cardId = card.id;
+-- 出现错误：
+-- ERROR 1054 (42S22): Unknown column &#39;person.cardId&#39; in &#39;on clause&#39;
+
+-- MySQL全连接语法，使用 UNION 将两张表合并在一起。
+SELECT * FROM person LEFT JOIN card on person.cardId = card.id
+UNION
+SELECT * FROM person RIGHT JOIN card on person.cardId = card.id;
++------+--------+--------+------+-----------+
+| id   | name   | cardId | id   | name      |
++------+--------+--------+------+-----------+
+|    1 | 张三   |      1 |    1 | 饭卡      |
+|    2 | 李四   |      3 |    3 | 农行卡    |
+|    3 | 王五   |      6 | NULL | NULL      |
+| NULL | NULL   |   NULL |    2 | 建行卡    |
+| NULL | NULL   |   NULL |    4 | 工商卡    |
+| NULL | NULL   |   NULL |    5 | 邮政卡    |
++------+--------+--------+------+-----------+
+</code></pre>
+<h2 id="事务"><a href="#事务" class="headerlink" title="事务"></a>事务</h2><p>在 MySQL 中，事务其实是一个最小的不可分割的工作单元。事务能够<strong>保证一个业务的完整性</strong> 。</p>
+<p>比如我们的银行转账：</p>
+<pre><code>-- a -&gt; -100
+UPDATE user set money = money - 100 WHERE name = &#39;a&#39;;
+
+-- b -&gt; +100
+UPDATE user set money = money + 100 WHERE name = &#39;b&#39;;
+</code></pre>
+<p>在实际项目中，假设只有一条 SQL 语句执行成功，而另外一条执行失败了，就会出现数据前后不一致。</p>
+<p>因此，在执行多条有关联 SQL 语句时，<strong>事务</strong> 可能会要求这些 SQL 语句要么同时执行成功，要么就都执行失败。</p>
+<h3 id="如何控制事务-COMMIT-ROLLBACK"><a href="#如何控制事务-COMMIT-ROLLBACK" class="headerlink" title="如何控制事务 - COMMIT &#x2F; ROLLBACK"></a>如何控制事务 - COMMIT &#x2F; ROLLBACK</h3><p>在 MySQL 中，事务的<strong>自动提交</strong> 状态默认是开启的。</p>
+<pre><code>-- 查询事务的自动提交状态
+SELECT @@AUTOCOMMIT;
++--------------+
+| @@AUTOCOMMIT |
++--------------+
+|            1 |
++--------------+
+</code></pre>
+<p><strong>自动提交的作用</strong> ：当我们执行一条 SQL 语句的时候，其产生的效果就会立即体现出来，且不能<strong>回滚</strong> 。</p>
+<p>什么是回滚？举个例子：</p>
+<pre><code>CREATE DATABASE bank;
+
+USE bank;
+
+CREATE TABLE user (
+    id INT PRIMARY KEY,
+    name VARCHAR(20),
+    money INT
+);
+
+INSERT INTO user VALUES (1, &#39;a&#39;, 1000);
+
+SELECT * FROM user;
++----+------+-------+
+| id | name | money |
++----+------+-------+
+|  1 | a    |  1000 |
++----+------+-------+
+</code></pre>
+<p>可以看到，在执行插入语句后数据立刻生效，原因是 MySQL 中的事务自动将它<strong>提交</strong> 到了数据库中。那么所谓<strong>回滚</strong> 的意思就是，撤销执行过的所有 SQL 语句，使其回滚到<strong>最后一次提交</strong> 数据时的状态。</p>
+<p>在 MySQL 中使用 <code>ROLLBACK</code> 执行回滚：</p>
+<pre><code>-- 回滚到最后一次提交
+ROLLBACK;
+
+SELECT * FROM user;
++----+------+-------+
+| id | name | money |
++----+------+-------+
+|  1 | a    |  1000 |
++----+------+-------+
+</code></pre>
+<p>由于所有执行过的 SQL 语句都已经被提交过了，所以数据并没有发生回滚。那如何让数据可以发生回滚？</p>
+<pre><code>-- 关闭自动提交
+SET AUTOCOMMIT = 0;
+
+-- 查询自动提交状态
+SELECT @@AUTOCOMMIT;
++--------------+
+| @@AUTOCOMMIT |
++--------------+
+|            0 |
++--------------+
+</code></pre>
+<p>将自动提交关闭后，测试数据回滚：</p>
+<pre><code>INSERT INTO user VALUES (2, &#39;b&#39;, 1000);
+
+-- 关闭 AUTOCOMMIT 后，数据的变化是在一张虚拟的临时数据表中展示，
+-- 发生变化的数据并没有真正插入到数据表中。
+SELECT * FROM user;
++----+------+-------+
+| id | name | money |
++----+------+-------+
+|  1 | a    |  1000 |
+|  2 | b    |  1000 |
++----+------+-------+
+
+-- 数据表中的真实数据其实还是：
++----+------+-------+
+| id | name | money |
++----+------+-------+
+|  1 | a    |  1000 |
++----+------+-------+
+
+-- 由于数据还没有真正提交，可以使用回滚
+ROLLBACK;
+
+-- 再次查询
+SELECT * FROM user;
++----+------+-------+
+| id | name | money |
++----+------+-------+
+|  1 | a    |  1000 |
++----+------+-------+
+</code></pre>
+<p>那如何将虚拟的数据真正提交到数据库中？使用 <code>COMMIT</code> : </p>
+<pre><code>INSERT INTO user VALUES (2, &#39;b&#39;, 1000);
+-- 手动提交数据（持久性），
+-- 将数据真正提交到数据库中，执行后不能再回滚提交过的数据。
+COMMIT;
+
+-- 提交后测试回滚
+ROLLBACK;
+
+-- 再次查询（回滚无效了）
+SELECT * FROM user;
++----+------+-------+
+| id | name | money |
++----+------+-------+
+|  1 | a    |  1000 |
+|  2 | b    |  1000 |
++----+------+-------+
+</code></pre>
+<blockquote>
+<p><strong>总结</strong></p>
+<ol>
+<li><p><strong>自动提交</strong></p>
+<ul>
+<li><p>查看自动提交状态：<code>SELECT @@AUTOCOMMIT</code> ；</p>
+</li>
+<li><p>设置自动提交状态：<code>SET AUTOCOMMIT = 0</code> 。</p>
+</li>
+</ul>
+</li>
+<li><p><strong>手动提交</strong></p>
+</li>
+</ol>
+<p><code>@@AUTOCOMMIT = 0</code> 时，使用 <code>COMMIT</code> 命令提交事务。</p>
+<ol start="3">
+<li><strong>事务回滚</strong></li>
+</ol>
+<p><code>@@AUTOCOMMIT = 0</code> 时，使用 <code>ROLLBACK</code> 命令回滚事务。</p>
+</blockquote>
+<p><strong>事务的实际应用</strong> ，让我们再回到银行转账项目：</p>
+<pre><code>-- 转账
+UPDATE user set money = money - 100 WHERE name = &#39;a&#39;;
+
+-- 到账
+UPDATE user set money = money + 100 WHERE name = &#39;b&#39;;
+
+SELECT * FROM user;
++----+------+-------+
+| id | name | money |
++----+------+-------+
+|  1 | a    |   900 |
+|  2 | b    |  1100 |
++----+------+-------+
+</code></pre>
+<p>这时假设在转账时发生了意外，就可以使用 <code>ROLLBACK</code> 回滚到最后一次提交的状态：</p>
+<pre><code>-- 假设转账发生了意外，需要回滚。
+ROLLBACK;
+
+SELECT * FROM user;
++----+------+-------+
+| id | name | money |
++----+------+-------+
+|  1 | a    |  1000 |
+|  2 | b    |  1000 |
++----+------+-------+
+</code></pre>
+<p>这时我们又回到了发生意外之前的状态，也就是说，事务给我们提供了一个可以反悔的机会。假设数据没有发生意外，这时可以手动将数据真正提交到数据表中：<code>COMMIT</code> 。</p>
+<h3 id="手动开启事务-BEGIN-START-TRANSACTION"><a href="#手动开启事务-BEGIN-START-TRANSACTION" class="headerlink" title="手动开启事务 - BEGIN &#x2F; START TRANSACTION"></a>手动开启事务 - BEGIN &#x2F; START TRANSACTION</h3><p>事务的默认提交被开启 ( <code>@@AUTOCOMMIT = 1</code> ) 后，此时就不能使用事务回滚了。但是我们还可以手动开启一个事务处理事件，使其可以发生回滚：</p>
+<pre><code>-- 使用 BEGIN 或者 START TRANSACTION 手动开启一个事务
+-- START TRANSACTION;
+BEGIN;
+UPDATE user set money = money - 100 WHERE name = &#39;a&#39;;
+UPDATE user set money = money + 100 WHERE name = &#39;b&#39;;
+
+-- 由于手动开启的事务没有开启自动提交，
+-- 此时发生变化的数据仍然是被保存在一张临时表中。
+SELECT * FROM user;
++----+------+-------+
+| id | name | money |
++----+------+-------+
+|  1 | a    |   900 |
+|  2 | b    |  1100 |
++----+------+-------+
+
+-- 测试回滚
+ROLLBACK;
+
+SELECT * FROM user;
++----+------+-------+
+| id | name | money |
++----+------+-------+
+|  1 | a    |  1000 |
+|  2 | b    |  1000 |
++----+------+-------+
+</code></pre>
+<p>仍然使用 <code>COMMIT</code> 提交数据，提交后无法再发生本次事务的回滚。</p>
+<pre><code>BEGIN;
+UPDATE user set money = money - 100 WHERE name = &#39;a&#39;;
+UPDATE user set money = money + 100 WHERE name = &#39;b&#39;;
+
+SELECT * FROM user;
++----+------+-------+
+| id | name | money |
++----+------+-------+
+|  1 | a    |   900 |
+|  2 | b    |  1100 |
++----+------+-------+
+
+-- 提交数据
+COMMIT;
+
+-- 测试回滚（无效，因为表的数据已经被提交）
+ROLLBACK;
+</code></pre>
+<h3 id="事务的-ACID-特征与使用"><a href="#事务的-ACID-特征与使用" class="headerlink" title="事务的 ACID 特征与使用"></a>事务的 ACID 特征与使用</h3><p><strong>事务的四大特征：</strong></p>
+<ul>
+<li><strong>A 原子性</strong> ：事务是最小的单位，不可以再分割；</li>
+<li><strong>C 一致性</strong> ：要求同一事务中的 SQL 语句，必须保证同时成功或者失败；</li>
+<li><strong>I 隔离性</strong> ：事务1 和 事务2 之间是具有隔离性的；</li>
+<li><strong>D 持久性</strong> ：事务一旦结束 ( <code>COMMIT</code> ) ，就不可以再返回了 ( <code>ROLLBACK</code> ) 。</li>
+</ul>
+<h3 id="事务的隔离性"><a href="#事务的隔离性" class="headerlink" title="事务的隔离性"></a>事务的隔离性</h3><p><strong>事务的隔离性可分为四种 ( 性能从低到高 )</strong> ：</p>
+<ol>
+<li><strong>READ UNCOMMITTED ( 读取未提交 )</strong></li>
+</ol>
+<p>如果有多个事务，那么任意事务都可以看见其他事务的<strong>未提交数据</strong> 。</p>
+<ol start="2">
+<li><strong>READ COMMITTED ( 读取已提交 )</strong></li>
+</ol>
+<p>只能读取到其他事务<strong>已经提交的数据</strong> 。</p>
+<ol start="3">
+<li><strong>REPEATABLE READ ( 可被重复读 )</strong></li>
+</ol>
+<p>如果有多个连接都开启了事务，那么事务之间不能共享数据记录，否则只能共享已提交的记录。</p>
+<ol start="4">
+<li><strong>SERIALIZABLE ( 串行化 )</strong></li>
+</ol>
+<p>所有的事务都会按照<strong>固定顺序执行</strong> ，执行完一个事务后再继续执行下一个事务的<strong>写入操作</strong> 。</p>
+<p>查看当前数据库的默认隔离级别：</p>
+<pre><code>-- MySQL 8.x, GLOBAL 表示系统级别，不加表示会话级别。
+SELECT @@GLOBAL.TRANSACTION_ISOLATION;
+SELECT @@TRANSACTION_ISOLATION;
++--------------------------------+
+| @@GLOBAL.TRANSACTION_ISOLATION |
++--------------------------------+
+| REPEATABLE-READ                | -- MySQL的默认隔离级别，可以重复读。
++--------------------------------+
+
+-- MySQL 5.x
+SELECT @@GLOBAL.TX_ISOLATION;
+SELECT @@TX_ISOLATION;
+</code></pre>
+<p>修改隔离级别：</p>
+<pre><code>-- 设置系统隔离级别，LEVEL 后面表示要设置的隔离级别 (READ UNCOMMITTED)。
+SET GLOBAL TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+
+-- 查询系统隔离级别，发现已经被修改。
+SELECT @@GLOBAL.TRANSACTION_ISOLATION;
++--------------------------------+
+| @@GLOBAL.TRANSACTION_ISOLATION |
++--------------------------------+
+| READ-UNCOMMITTED               |
++--------------------------------+
+</code></pre>
+<h4 id="脏读"><a href="#脏读" class="headerlink" title="脏读"></a>脏读</h4><p>测试 <strong>READ UNCOMMITTED ( 读取未提交 )</strong> 的隔离性：</p>
+<pre><code>INSERT INTO user VALUES (3, &#39;小明&#39;, 1000);
+INSERT INTO user VALUES (4, &#39;淘宝店&#39;, 1000);
+
+SELECT * FROM user;
++----+-----------+-------+
+| id | name      | money |
++----+-----------+-------+
+|  1 | a         |   900 |
+|  2 | b         |  1100 |
+|  3 | 小明      |  1000 |
+|  4 | 淘宝店    |  1000 |
++----+-----------+-------+
+
+-- 开启一个事务操作数据
+-- 假设小明在淘宝店买了一双800块钱的鞋子：
+START TRANSACTION;
+UPDATE user SET money = money - 800 WHERE name = &#39;小明&#39;;
+UPDATE user SET money = money + 800 WHERE name = &#39;淘宝店&#39;;
+
+-- 然后淘宝店在另一方查询结果，发现钱已到账。
+SELECT * FROM user;
++----+-----------+-------+
+| id | name      | money |
++----+-----------+-------+
+|  1 | a         |   900 |
+|  2 | b         |  1100 |
+|  3 | 小明      |   200 |
+|  4 | 淘宝店    |  1800 |
++----+-----------+-------+
+</code></pre>
+<p>由于小明的转账是在新开启的事务上进行操作的，而该操作的结果是可以被其他事务（另一方的淘宝店）看见的，因此淘宝店的查询结果是正确的，淘宝店确认到账。但就在这时，如果小明在它所处的事务上又执行了 <code>ROLLBACK</code> 命令，会发生什么？</p>
+<pre><code>-- 小明所处的事务
+ROLLBACK;
+
+-- 此时无论对方是谁，如果再去查询结果就会发现：
+SELECT * FROM user;
++----+-----------+-------+
+| id | name      | money |
++----+-----------+-------+
+|  1 | a         |   900 |
+|  2 | b         |  1100 |
+|  3 | 小明      |  1000 |
+|  4 | 淘宝店    |  1000 |
++----+-----------+-------+
+</code></pre>
+<p>这就是所谓的<strong>脏读</strong> ，一个事务读取到另外一个事务还未提交的数据。这在实际开发中是不允许出现的。</p>
+<h4 id="读取已提交"><a href="#读取已提交" class="headerlink" title="读取已提交"></a>读取已提交</h4><p>把隔离级别设置为 <strong>READ COMMITTED</strong> ：</p>
+<pre><code>SET GLOBAL TRANSACTION ISOLATION LEVEL READ COMMITTED;
+SELECT @@GLOBAL.TRANSACTION_ISOLATION;
++--------------------------------+
+| @@GLOBAL.TRANSACTION_ISOLATION |
++--------------------------------+
+| READ-COMMITTED                 |
++--------------------------------+
+</code></pre>
+<p>这样，再有新的事务连接进来时，它们就只能查询到已经提交过的事务数据了。但是对于当前事务来说，它们看到的还是未提交的数据，例如：</p>
+<pre><code>-- 正在操作数据事务（当前事务）
+START TRANSACTION;
+UPDATE user SET money = money - 800 WHERE name = &#39;小明&#39;;
+UPDATE user SET money = money + 800 WHERE name = &#39;淘宝店&#39;;
+
+-- 虽然隔离级别被设置为了 READ COMMITTED，但在当前事务中，
+-- 它看到的仍然是数据表中临时改变数据，而不是真正提交过的数据。
+SELECT * FROM user;
++----+-----------+-------+
+| id | name      | money |
++----+-----------+-------+
+|  1 | a         |   900 |
+|  2 | b         |  1100 |
+|  3 | 小明      |   200 |
+|  4 | 淘宝店    |  1800 |
++----+-----------+-------+
+
+
+-- 假设此时在远程开启了一个新事务，连接到数据库。
+$ mysql -u root -p12345612
+
+-- 此时远程连接查询到的数据只能是已经提交过的
+SELECT * FROM user;
++----+-----------+-------+
+| id | name      | money |
++----+-----------+-------+
+|  1 | a         |   900 |
+|  2 | b         |  1100 |
+|  3 | 小明      |  1000 |
+|  4 | 淘宝店    |  1000 |
++----+-----------+-------+
+</code></pre>
+<p>但是这样还有问题，那就是假设一个事务在操作数据时，其他事务干扰了这个事务的数据。例如：</p>
+<pre><code>-- 小张在查询数据的时候发现：
+SELECT * FROM user;
++----+-----------+-------+
+| id | name      | money |
++----+-----------+-------+
+|  1 | a         |   900 |
+|  2 | b         |  1100 |
+|  3 | 小明      |   200 |
+|  4 | 淘宝店    |  1800 |
++----+-----------+-------+
+
+-- 在小张求表的 money 平均值之前，小王做了一个操作：
+START TRANSACTION;
+INSERT INTO user VALUES (5, &#39;c&#39;, 100);
+COMMIT;
+
+-- 此时表的真实数据是：
+SELECT * FROM user;
++----+-----------+-------+
+| id | name      | money |
++----+-----------+-------+
+|  1 | a         |   900 |
+|  2 | b         |  1100 |
+|  3 | 小明      |  1000 |
+|  4 | 淘宝店    |  1000 |
+|  5 | c         |   100 |
++----+-----------+-------+
+
+-- 这时小张再求平均值的时候，就会出现计算不相符合的情况：
+SELECT AVG(money) FROM user;
++------------+
+| AVG(money) |
++------------+
+|  820.0000  |
++------------+
+</code></pre>
+<p>虽然 <strong>READ COMMITTED</strong> 让我们只能读取到其他事务已经提交的数据，但还是会出现问题，就是<strong>在读取同一个表的数据时，可能会发生前后不一致的情况。</strong> 这被称为<strong>不可重复读现象 ( READ COMMITTED )</strong> 。</p>
+<h4 id="幻读"><a href="#幻读" class="headerlink" title="幻读"></a>幻读</h4><p>将隔离级别设置为 <strong>REPEATABLE READ ( 可被重复读取 )</strong> :</p>
+<pre><code>SET GLOBAL TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+SELECT @@GLOBAL.TRANSACTION_ISOLATION;
++--------------------------------+
+| @@GLOBAL.TRANSACTION_ISOLATION |
++--------------------------------+
+| REPEATABLE-READ                |
++--------------------------------+
+</code></pre>
+<p>测试 <strong>REPEATABLE READ</strong> ，假设在两个不同的连接上分别执行 <code>START TRANSACTION</code> :</p>
+<pre><code>-- 小张 - 成都
+START TRANSACTION;
+INSERT INTO user VALUES (6, &#39;d&#39;, 1000);
+
+-- 小王 - 北京
+START TRANSACTION;
+
+-- 小张 - 成都
+COMMIT;
+</code></pre>
+<p>当前事务开启后，没提交之前，查询不到，提交后可以被查询到。但是，在提交之前其他事务被开启了，那么在这条事务线上，就不会查询到当前有操作事务的连接。相当于开辟出一条单独的线程。</p>
+<p>无论小张是否执行过 <code>COMMIT</code> ，在小王这边，都不会查询到小张的事务记录，而是只会查询到自己所处事务的记录：</p>
+<pre><code>SELECT * FROM user;
++----+-----------+-------+
+| id | name      | money |
++----+-----------+-------+
+|  1 | a         |   900 |
+|  2 | b         |  1100 |
+|  3 | 小明      |  1000 |
+|  4 | 淘宝店    |  1000 |
+|  5 | c         |   100 |
++----+-----------+-------+
+</code></pre>
+<p>这是<strong>因为小王在此之前开启了一个新的事务 (<code>START TRANSACTION</code> ) <strong>，那么</strong> 在他的这条新事务的线上，跟其他事务是没有联系的</strong>，也就是说，此时如果其他事务正在操作数据，它是不知道的。</p>
+<p>然而事实是，在真实的数据表中，小张已经插入了一条数据。但是小王此时并不知道，也插入了同一条数据，会发生什么呢？</p>
+<pre><code>INSERT INTO user VALUES (6, &#39;d&#39;, 1000);
+-- ERROR 1062 (23000): Duplicate entry &#39;6&#39; for key &#39;PRIMARY&#39;
+</code></pre>
+<p>报错了，操作被告知已存在主键为 <code>6</code> 的字段。这种现象也被称为<strong>幻读，一个事务提交的数据，不能被其他事务读取到</strong> 。</p>
+<h4 id="串行化"><a href="#串行化" class="headerlink" title="串行化"></a>串行化</h4><p>顾名思义，就是所有事务的<strong>写入操作</strong> 全都是串行化的。什么意思？把隔离级别修改成 <strong>SERIALIZABLE</strong> :</p>
+<pre><code>SET GLOBAL TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+SELECT @@GLOBAL.TRANSACTION_ISOLATION;
++--------------------------------+
+| @@GLOBAL.TRANSACTION_ISOLATION |
++--------------------------------+
+| SERIALIZABLE                   |
++--------------------------------+
+</code></pre>
+<p>还是拿小张和小王来举例：</p>
+<pre><code>-- 小张 - 成都
+START TRANSACTION;
+
+-- 小王 - 北京
+START TRANSACTION;
+
+-- 开启事务之前先查询表，准备操作数据。
+SELECT * FROM user;
++----+-----------+-------+
+| id | name      | money |
++----+-----------+-------+
+|  1 | a         |   900 |
+|  2 | b         |  1100 |
+|  3 | 小明      |  1000 |
+|  4 | 淘宝店    |  1000 |
+|  5 | c         |   100 |
+|  6 | d         |  1000 |
++----+-----------+-------+
+
+-- 发现没有 7 号王小花，于是插入一条数据：
+INSERT INTO user VALUES (7, &#39;王小花&#39;, 1000);
+</code></pre>
+<p>此时会发生什么呢？由于现在的隔离级别是 <strong>SERIALIZABLE ( 串行化 )</strong> ，串行化的意思就是：假设把所有的事务都放在一个串行的队列中，那么所有的事务都会按照<strong>固定顺序执行</strong> ，执行完一个事务后再继续执行下一个事务的<strong>写入操作</strong> ( <strong>这意味着队列中同时只能执行一个事务的写入操作</strong> ) 。</p>
+<p>根据这个解释，小王在插入数据时，会出现等待状态，直到小张执行 <code>COMMIT</code> 结束它所处的事务，或者出现等待超时。</p>
+<p>__文章作者:<a target="_blank" rel="noopener" href="https://helsome.gihub.io/">helson</a></p>
+<p> __文章链接:<a target="_blank" rel="noopener" href="https://helsome.gihub.io/2024/06/20/MYSQL%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0-0/">https://helsome.gihub.io/2024/06/20/MYSQL%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0-0/</a></p>
+<p>__版权声明: 本博客所有文章除特别声明外，均采用 <a target="_blank" rel="noopener" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a target="_blank" rel="noopener" href="https://helsome.gihub.io/">infinite</a>！</p>
+<p><a href="/tags/%E8%AF%BE%E7%A8%8B/">课程</a></p>
+<p><a href="/2024/07/08/blog%E6%8A%98%E8%85%BE%E6%97%A5%E8%AE%B0/" title="博客踩坑日记">上一篇博客踩坑日记</a></p>
+<p><a href="/2024/04/28/go%E8%AF%AD%E8%A8%80%E6%A0%B7%E6%9C%AC-%E9%80%86%E5%90%91%E5%88%86%E6%9E%90%E7%89%B9%E7%82%B9/" title="go语言样本逆向分析特点">下一篇go语言样本逆向分析特点</a></p>
+<p> __相关推荐</p>
+<p><a href="/2024/09/23/os-cs162/" title="os cs162"> __2024-09-23 os cs162</a></p>
+<p><img src="/hexo-blog/source/avatar%20img.jpg" alt="avatar"></p>
+<p>helson</p>
+<p>吾生有涯，其知无涯</p>
+<p><a href="/archives/">文章12</a><a href="/tags/">标签4</a><a href="/categories/">分类1</a></p>
+<p><a target="_blank" rel="noopener" href="https://github.com/helsome"> __Follow Me</a></p>
+<p><a target="_blank" rel="noopener" href="https://github.com/helsome" title="Github"> __</a><a href="mailto:&#x68;&#117;&#x69;&#99;&#104;&#x75;&#97;&#x6e;&#104;&#x38;&#64;&#x67;&#x6d;&#97;&#105;&#x6c;&#46;&#99;&#111;&#x6d;" title="Email">__</a></p>
+<p>__公告</p>
+<p>This is my Blog</p>
+<p> __目录</p>
+<ol>
+<li><ol>
+<li>MySQL学习笔记</li>
+<li>1.1. 登录和退出MySQL服务器</li>
+<li>1.2. 基本语法</li>
+<li>1.3. 建表约束<ol>
+<li>1.3.1. 主键约束</li>
+<li>1.3.2. 唯一主键</li>
+<li>1.3.3. 非空约束</li>
+<li>1.3.4. 默认约束</li>
+<li>1.3.5. 外键约束</li>
+</ol>
+</li>
+<li>1.4. 数据库的三大设计范式<ol>
+<li>1.4.1. 1NF</li>
+<li>1.4.2. 2NF</li>
+<li>1.4.3. 3NF</li>
+</ol>
+</li>
+<li>1.5. 查询练习<ol>
+<li>1.5.1. 准备数据</li>
+<li>1.5.2. 1 到 10</li>
+<li>1.5.3. 分组计算平均成绩</li>
+<li>1.5.4. 分组条件与模糊查询</li>
+<li>1.5.5. 多表查询 - 1</li>
+<li>1.5.6. 多表查询 - 2</li>
+<li>1.5.7. 三表关联查询</li>
+<li>1.5.8. 子查询加分组求平均分</li>
+<li>1.5.9. 子查询 - 1</li>
+<li>1.5.10. 子查询 - 2</li>
+<li>1.5.11. YEAR 函数与带 IN 关键字查询</li>
+<li>1.5.12. 多层嵌套子查询</li>
+<li>1.5.13. 多表查询</li>
+<li>1.5.14. 子查询 - 3</li>
+<li>1.5.15. UNION 和 NOTIN 的使用</li>
+<li>1.5.16. ANY 表示至少一个 - DESC ( 降序 )</li>
+<li>1.5.17. 表示所有的 ALL</li>
+<li>1.5.18. 复制表的数据作为条件查询</li>
+<li>1.5.19. 子查询 - 4</li>
+<li>1.5.20. 条件加组筛选</li>
+<li>1.5.21. NOTLIKE 模糊查询取反</li>
+<li>1.5.22. YEAR 与 NOW 函数</li>
+<li>1.5.23. MAX 与 MIN 函数</li>
+<li>1.5.24. 多段排序</li>
+<li>1.5.25. 子查询 - 5</li>
+<li>1.5.26. MAX 函数与子查询</li>
+<li>1.5.27. 子查询 - 6</li>
+<li>1.5.28. 子查询 - 7</li>
+<li>1.5.29. 子查询 - 8</li>
+<li>1.5.30. 按等级查询</li>
+<li>1.5.31. 连接查询</li>
+<li>1.5.31.1. 内连接</li>
+<li>1.5.31.2. 左外连接</li>
+<li>1.5.31.3. 右外链接</li>
+<li>1.5.31.4. 全外链接</li>
+</ol>
+</li>
+<li>1.6. 事务<ol>
+<li>1.6.1. 如何控制事务 - COMMIT &#x2F; ROLLBACK</li>
+<li>1.6.2. 手动开启事务 - BEGIN &#x2F; START TRANSACTION</li>
+<li>1.6.3. 事务的 ACID 特征与使用</li>
+<li>1.6.4. 事务的隔离性<ol>
+<li>1.6.4.1. 脏读</li>
+<li>1.6.4.2. 读取已提交</li>
+<li>1.6.4.3. 幻读</li>
+<li>1.6.4.4. 串行化</li>
+</ol>
+</li>
+</ol>
+</li>
+</ol>
+</li>
+</ol>
+<p> __最新文章</p>
+<p><a href="/2024/10/25/brute-ratel-C4-badger%E5%85%A8%E5%88%86%E6%9E%90%E6%96%87%E6%A1%A3/" title="brute ratel C4 badger全分析文档">brute ratel C4 badger全分析文档</a>2024-10-25</p>
+<p><a href="/2024/10/25/PE%E8%A7%A3%E6%9E%90%E5%99%A8%E7%BC%96%E5%86%99/" title="PE解析器编写">PE解析器编写</a>2024-10-25</p>
+<p><a href="/2024/10/25/%E5%88%A9%E7%94%A8dll%E9%80%9A%E7%9F%A5%E5%9B%9E%E8%B0%83%E5%8A%A0%E8%BD%BDshellcode/" title="利用dll通知回调加载shellcode">利用dll通知回调加载shellcode</a>2024-10-25</p>
+<p><a href="/2024/09/23/os-cs162/" title="os cs162">os cs162</a>2024-09-23</p>
+<p><a href="/2024/07/08/wannacry/" title="wannacry勒索病毒加密解密过程分析">wannacry勒索病毒加密解密过程分析</a>2024-07-08</p>
+<p>©2020 - 2024 By helson</p>
+<p>框架 <a target="_blank" rel="noopener" href="https://hexo.io/">Hexo</a>|主题 <a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></p>
+<hr>
+<hr>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://helsome.github.io">helson</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://helsome.github.io/2024/06/20/MYSQL%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0-0/">https://helsome.github.io/2024/06/20/MYSQL%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0-0/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://helsome.github.io" target="_blank">infinite</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E8%AF%BE%E7%A8%8B/">课程</a></div><div class="post-share"><div class="social-share" data-image="/img/butterfly-icon.png" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2024/07/08/blog%E6%8A%98%E8%85%BE%E6%97%A5%E8%AE%B0/" title="博客踩坑日记"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">博客踩坑日记</div></div><div class="info-2"><div class="info-item-1">更新这篇文章的原因是记录自己在hexo搭建博客中踩得各种坑。目的是为了提醒自己，下次同样问题的时候可以不用再查。如果我的踩坑记录能帮到其他人，那自然是更好。 hexo d 报 Error: Spawn failed 这里出错的原因是因为git 进行push或者hexo d的时候改变了一些.deploy_git文件下的内容。 解决方法是删除.deploy_git文件夹（在blog的目录中）; 查询到的方法为 ##删除git提交内容文件夹 rm -rf .deploy_git/  ##执行 git config --global core.autocrlf false  ##最后 hexo clean &amp;&amp; hexo g &amp;&amp; hexo d  但是我这里报错  ls看一下  删除当前目录下的所有文件及目录，命令行为： rm  -r  *  文件一旦通过rm命令删除，则无法恢复，所以必须格外小心地使用该命令。 执行后，该文件夹中所有文件都被删除  最后 hexo clean &amp;&amp; hexo g &amp;&amp; hexo d  解决后...</div></div></div></a><a class="pagination-related" href="/2024/04/28/go%E8%AF%AD%E8%A8%80%E6%A0%B7%E6%9C%AC-%E9%80%86%E5%90%91%E5%88%86%E6%9E%90%E7%89%B9%E7%82%B9/" title="go语言样本逆向分析特点"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">go语言样本逆向分析特点</div></div><div class="info-2"><div class="info-item-1">开源工具：https://github.com/0xjiayu/go_parserGo 语言的编译工具链会全静态链接构建二进制文件，把标准库函数和第三方 package 全部做了静态编译，再加上 Go 二进制文件中还打包进去了 runtime 和 GC(Garbage Collection，垃圾回收) 模块代码，所以导致文件结构非常复杂 go语言分析的难点go语言是一种适合处理高并发需求的语言，这和他的goroutine有关，这是一种轻量级线程，goroutine可以初始时只给栈分配很小的空间，然后随着使用过程中的需要自动地增长。这就是为什么Go可以开千千万万个goroutine而不会耗尽内存。每次执行函数调用时Go的runtime都会进行检测，若当前栈的大小不够用，则会触发“中断”，从当前函数进入到Go的运行时库，Go的运行时库会保存此时的函数上下文环境，然后分配一个新的足够大的栈空间，将旧栈的内容拷贝到新栈中，并做一些设置 独特的调用约定和栈管理机制，使 C&#x2F;C++ 二进制文件逆向分析的经验在这里力不从心：Go 语言用的是 continue stack 栈管理机制 ...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2024/09/23/os-cs162/" title="os cs162"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2024-09-23</div><div class="info-item-2">os cs162</div></div><div class="info-2"><div class="info-item-1">Thread and processaddress space 虚拟内存空间要经过转化才能映射到物理空间  process运行在user or kernel可以观察模式位（mod bit）判断 why threadthread是为了解决”muti“的问题，并发！  并行与并发的区别 __文章作者:helson  __文章链接:https://helsome.gihub.io/2024/09/23/os-cs162/ __版权声明: 本博客所有文章除特别声明外，均采用 CC BY-NC-SA 4.0 许可协议。转载请注明来自 infinite！ 课程 上一篇利用dll通知回调加载shellcode 下一篇wannacry勒索病毒加密解密过程分析  __相关推荐  __2024-06-20 MYSQL学习笔记  helson 吾生有涯，其知无涯 文章12标签4分类1  __Follow Me  ____ __公告 This is my Blog  __目录   Thread and process 1.1. address space    why thread     __最新文章...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/butterfly-icon.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">helson</div><div class="author-info-description">吾生有涯，其知无涯</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">12</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">7</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">0</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/helsome"><i class="fab fa-github"></i><span>GitHub</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/helsome" target="_blank" title="Github"><i class="fab fa-github" style="color: #2A2218;"></i></a></div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#MySQL%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0"><span class="toc-number">1.</span> <span class="toc-text">MySQL学习笔记</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%99%BB%E5%BD%95%E5%92%8C%E9%80%80%E5%87%BAMySQL%E6%9C%8D%E5%8A%A1%E5%99%A8"><span class="toc-number">1.1.</span> <span class="toc-text">登录和退出MySQL服务器</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9F%BA%E6%9C%AC%E8%AF%AD%E6%B3%95"><span class="toc-number">1.2.</span> <span class="toc-text">基本语法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%BB%BA%E8%A1%A8%E7%BA%A6%E6%9D%9F"><span class="toc-number">1.3.</span> <span class="toc-text">建表约束</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%BB%E9%94%AE%E7%BA%A6%E6%9D%9F"><span class="toc-number">1.3.1.</span> <span class="toc-text">主键约束</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%94%AF%E4%B8%80%E4%B8%BB%E9%94%AE"><span class="toc-number">1.3.2.</span> <span class="toc-text">唯一主键</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%9D%9E%E7%A9%BA%E7%BA%A6%E6%9D%9F"><span class="toc-number">1.3.3.</span> <span class="toc-text">非空约束</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%BB%98%E8%AE%A4%E7%BA%A6%E6%9D%9F"><span class="toc-number">1.3.4.</span> <span class="toc-text">默认约束</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%A4%96%E9%94%AE%E7%BA%A6%E6%9D%9F"><span class="toc-number">1.3.5.</span> <span class="toc-text">外键约束</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%95%B0%E6%8D%AE%E5%BA%93%E7%9A%84%E4%B8%89%E5%A4%A7%E8%AE%BE%E8%AE%A1%E8%8C%83%E5%BC%8F"><span class="toc-number">1.4.</span> <span class="toc-text">数据库的三大设计范式</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1NF"><span class="toc-number">1.4.1.</span> <span class="toc-text">1NF</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2NF"><span class="toc-number">1.4.2.</span> <span class="toc-text">2NF</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3NF"><span class="toc-number">1.4.3.</span> <span class="toc-text">3NF</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%9F%A5%E8%AF%A2%E7%BB%83%E4%B9%A0"><span class="toc-number">1.5.</span> <span class="toc-text">查询练习</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%87%86%E5%A4%87%E6%95%B0%E6%8D%AE"><span class="toc-number">1.5.1.</span> <span class="toc-text">准备数据</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E5%88%B0-10"><span class="toc-number">1.5.2.</span> <span class="toc-text">1 到 10</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%86%E7%BB%84%E8%AE%A1%E7%AE%97%E5%B9%B3%E5%9D%87%E6%88%90%E7%BB%A9"><span class="toc-number">1.5.3.</span> <span class="toc-text">分组计算平均成绩</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%86%E7%BB%84%E6%9D%A1%E4%BB%B6%E4%B8%8E%E6%A8%A1%E7%B3%8A%E6%9F%A5%E8%AF%A2"><span class="toc-number">1.5.4.</span> <span class="toc-text">分组条件与模糊查询</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%A4%9A%E8%A1%A8%E6%9F%A5%E8%AF%A2-1"><span class="toc-number">1.5.5.</span> <span class="toc-text">多表查询 - 1</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%A4%9A%E8%A1%A8%E6%9F%A5%E8%AF%A2-2"><span class="toc-number">1.5.6.</span> <span class="toc-text">多表查询 - 2</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%89%E8%A1%A8%E5%85%B3%E8%81%94%E6%9F%A5%E8%AF%A2"><span class="toc-number">1.5.7.</span> <span class="toc-text">三表关联查询</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AD%90%E6%9F%A5%E8%AF%A2%E5%8A%A0%E5%88%86%E7%BB%84%E6%B1%82%E5%B9%B3%E5%9D%87%E5%88%86"><span class="toc-number">1.5.8.</span> <span class="toc-text">子查询加分组求平均分</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AD%90%E6%9F%A5%E8%AF%A2-1"><span class="toc-number">1.5.9.</span> <span class="toc-text">子查询 - 1</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AD%90%E6%9F%A5%E8%AF%A2-2"><span class="toc-number">1.5.10.</span> <span class="toc-text">子查询 - 2</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#YEAR-%E5%87%BD%E6%95%B0%E4%B8%8E%E5%B8%A6-IN-%E5%85%B3%E9%94%AE%E5%AD%97%E6%9F%A5%E8%AF%A2"><span class="toc-number">1.5.11.</span> <span class="toc-text">YEAR 函数与带 IN 关键字查询</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%A4%9A%E5%B1%82%E5%B5%8C%E5%A5%97%E5%AD%90%E6%9F%A5%E8%AF%A2"><span class="toc-number">1.5.12.</span> <span class="toc-text">多层嵌套子查询</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%A4%9A%E8%A1%A8%E6%9F%A5%E8%AF%A2"><span class="toc-number">1.5.13.</span> <span class="toc-text">多表查询</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AD%90%E6%9F%A5%E8%AF%A2-3"><span class="toc-number">1.5.14.</span> <span class="toc-text">子查询 - 3</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#UNION-%E5%92%8C-NOTIN-%E7%9A%84%E4%BD%BF%E7%94%A8"><span class="toc-number">1.5.15.</span> <span class="toc-text">UNION 和 NOTIN 的使用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ANY-%E8%A1%A8%E7%A4%BA%E8%87%B3%E5%B0%91%E4%B8%80%E4%B8%AA-DESC-%E9%99%8D%E5%BA%8F"><span class="toc-number">1.5.16.</span> <span class="toc-text">ANY 表示至少一个 - DESC ( 降序 )</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%A1%A8%E7%A4%BA%E6%89%80%E6%9C%89%E7%9A%84-ALL"><span class="toc-number">1.5.17.</span> <span class="toc-text">表示所有的 ALL</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%A4%8D%E5%88%B6%E8%A1%A8%E7%9A%84%E6%95%B0%E6%8D%AE%E4%BD%9C%E4%B8%BA%E6%9D%A1%E4%BB%B6%E6%9F%A5%E8%AF%A2"><span class="toc-number">1.5.18.</span> <span class="toc-text">复制表的数据作为条件查询</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AD%90%E6%9F%A5%E8%AF%A2-4"><span class="toc-number">1.5.19.</span> <span class="toc-text">子查询 - 4</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%9D%A1%E4%BB%B6%E5%8A%A0%E7%BB%84%E7%AD%9B%E9%80%89"><span class="toc-number">1.5.20.</span> <span class="toc-text">条件加组筛选</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#NOTLIKE-%E6%A8%A1%E7%B3%8A%E6%9F%A5%E8%AF%A2%E5%8F%96%E5%8F%8D"><span class="toc-number">1.5.21.</span> <span class="toc-text">NOTLIKE 模糊查询取反</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#YEAR-%E4%B8%8E-NOW-%E5%87%BD%E6%95%B0"><span class="toc-number">1.5.22.</span> <span class="toc-text">YEAR 与 NOW 函数</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#MAX-%E4%B8%8E-MIN-%E5%87%BD%E6%95%B0"><span class="toc-number">1.5.23.</span> <span class="toc-text">MAX 与 MIN 函数</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%A4%9A%E6%AE%B5%E6%8E%92%E5%BA%8F"><span class="toc-number">1.5.24.</span> <span class="toc-text">多段排序</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AD%90%E6%9F%A5%E8%AF%A2-5"><span class="toc-number">1.5.25.</span> <span class="toc-text">子查询 - 5</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#MAX-%E5%87%BD%E6%95%B0%E4%B8%8E%E5%AD%90%E6%9F%A5%E8%AF%A2"><span class="toc-number">1.5.26.</span> <span class="toc-text">MAX 函数与子查询</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AD%90%E6%9F%A5%E8%AF%A2-6"><span class="toc-number">1.5.27.</span> <span class="toc-text">子查询 - 6</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AD%90%E6%9F%A5%E8%AF%A2-7"><span class="toc-number">1.5.28.</span> <span class="toc-text">子查询 - 7</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AD%90%E6%9F%A5%E8%AF%A2-8"><span class="toc-number">1.5.29.</span> <span class="toc-text">子查询 - 8</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%8C%89%E7%AD%89%E7%BA%A7%E6%9F%A5%E8%AF%A2"><span class="toc-number">1.5.30.</span> <span class="toc-text">按等级查询</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%BF%9E%E6%8E%A5%E6%9F%A5%E8%AF%A2"><span class="toc-number">1.5.31.</span> <span class="toc-text">连接查询</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%86%85%E8%BF%9E%E6%8E%A5"><span class="toc-number">1.5.31.1.</span> <span class="toc-text">内连接</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%B7%A6%E5%A4%96%E8%BF%9E%E6%8E%A5"><span class="toc-number">1.5.31.2.</span> <span class="toc-text">左外连接</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%8F%B3%E5%A4%96%E9%93%BE%E6%8E%A5"><span class="toc-number">1.5.31.3.</span> <span class="toc-text">右外链接</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%85%A8%E5%A4%96%E9%93%BE%E6%8E%A5"><span class="toc-number">1.5.31.4.</span> <span class="toc-text">全外链接</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8B%E5%8A%A1"><span class="toc-number">1.6.</span> <span class="toc-text">事务</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%A6%82%E4%BD%95%E6%8E%A7%E5%88%B6%E4%BA%8B%E5%8A%A1-COMMIT-ROLLBACK"><span class="toc-number">1.6.1.</span> <span class="toc-text">如何控制事务 - COMMIT &#x2F; ROLLBACK</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%89%8B%E5%8A%A8%E5%BC%80%E5%90%AF%E4%BA%8B%E5%8A%A1-BEGIN-START-TRANSACTION"><span class="toc-number">1.6.2.</span> <span class="toc-text">手动开启事务 - BEGIN &#x2F; START TRANSACTION</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BA%8B%E5%8A%A1%E7%9A%84-ACID-%E7%89%B9%E5%BE%81%E4%B8%8E%E4%BD%BF%E7%94%A8"><span class="toc-number">1.6.3.</span> <span class="toc-text">事务的 ACID 特征与使用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BA%8B%E5%8A%A1%E7%9A%84%E9%9A%94%E7%A6%BB%E6%80%A7"><span class="toc-number">1.6.4.</span> <span class="toc-text">事务的隔离性</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E8%84%8F%E8%AF%BB"><span class="toc-number">1.6.4.1.</span> <span class="toc-text">脏读</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E8%AF%BB%E5%8F%96%E5%B7%B2%E6%8F%90%E4%BA%A4"><span class="toc-number">1.6.4.2.</span> <span class="toc-text">读取已提交</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%B9%BB%E8%AF%BB"><span class="toc-number">1.6.4.3.</span> <span class="toc-text">幻读</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%B8%B2%E8%A1%8C%E5%8C%96"><span class="toc-number">1.6.4.4.</span> <span class="toc-text">串行化</span></a></li></ol></li></ol></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/10/25/brute-ratel-C4-badger%E5%85%A8%E5%88%86%E6%9E%90%E6%96%87%E6%A1%A3/" title="brute ratel C4 badger全分析文档">brute ratel C4 badger全分析文档</a><time datetime="2024-10-25T11:37:08.000Z" title="发表于 2024-10-25 19:37:08">2024-10-25</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/10/25/PE%E8%A7%A3%E6%9E%90%E5%99%A8%E7%BC%96%E5%86%99/" title="PE解析器编写">PE解析器编写</a><time datetime="2024-10-25T11:29:28.000Z" title="发表于 2024-10-25 19:29:28">2024-10-25</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/10/25/%E5%88%A9%E7%94%A8dll%E9%80%9A%E7%9F%A5%E5%9B%9E%E8%B0%83%E5%8A%A0%E8%BD%BDshellcode/" title="利用dll通知回调加载shellcode">利用dll通知回调加载shellcode</a><time datetime="2024-10-25T10:50:38.000Z" title="发表于 2024-10-25 18:50:38">2024-10-25</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/09/23/os-cs162/" title="os cs162">os cs162</a><time datetime="2024-09-23T11:00:34.000Z" title="发表于 2024-09-23 19:00:34">2024-09-23</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/07/08/wannacry/" title="wannacry勒索病毒加密解密过程分析">wannacry勒索病毒加密解密过程分析</a><time datetime="2024-07-08T09:46:32.000Z" title="发表于 2024-07-08 17:46:32">2024-07-08</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2025 - 2026 By helson</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.1</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.4</a></span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.4"></script><script src="/js/main.js?v=5.5.4"></script><div class="js-pjax"></div><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>

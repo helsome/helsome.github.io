@@ -1,0 +1,387 @@
+/* ============================================
+   IVORY WHITE THEME — custom.css
+   Palette: bg #F8F5EF · surface #FFF · accent #7C6348 · text #2A2218
+   ============================================ */
+
+/* ── Base ──────────────────────────────────── */
+body {
+  background: #F8F5EF !important;
+  color: #2A2218;
+}
+
+/* Override Butterfly card-hover shadow tint */
+.cardHover,
+.recent-post-item,
+#aside-content .card-widget {
+  box-shadow: 0 1px 6px rgba(42, 34, 24, 0.06) !important;
+}
+
+/* ── Navigation ────────────────────────────── */
+#nav {
+  background: rgba(248, 245, 239, 0.92) !important;
+  box-shadow: 0 1px 0 #E6DFD1 !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.nav-site-title .site-name,
+#nav a,
+#nav span {
+  color: #2A2218 !important;
+  text-shadow: none !important;
+}
+
+#nav a:hover {
+  color: #7C6348 !important;
+}
+
+/* ── Page Header (not-top-img mode) ────────── */
+#page-header.not-top-img {
+  height: 60px;
+  margin-bottom: 0;
+  background: transparent !important;
+}
+
+/* Hide seo-only title */
+#page-header .title-seo {
+  display: none;
+}
+
+/* ── Main Layout ───────────────────────────── */
+.layout {
+  padding-top: 24px !important;
+  padding-bottom: 48px !important;
+  gap: 0;
+}
+
+/* ── Article List (right main area) ────────── */
+#recent-posts {
+  background: transparent;
+}
+
+.recent-post-item {
+  background: #FFFFFF !important;
+  border: 1px solid #E6DFD1 !important;
+  border-radius: 12px !important;
+  margin-bottom: 12px !important;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  overflow: hidden;
+}
+
+.recent-post-item:hover {
+  box-shadow: 0 4px 18px rgba(124, 99, 72, 0.1) !important;
+  transform: translateY(-2px);
+}
+
+.recent-post-info {
+  padding: 20px 24px !important;
+}
+
+/* Article title */
+.recent-post-info .article-title {
+  color: #2A2218 !important;
+  font-size: 1.05rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.recent-post-info .article-title:hover {
+  color: #7C6348 !important;
+}
+
+/* Meta row */
+.article-meta-wrap {
+  margin-top: 6px;
+}
+
+.article-meta-wrap .post-meta-date,
+.article-meta-wrap .article-meta,
+.article-meta-wrap .article-meta-label,
+.article-meta-wrap i {
+  color: #B2A699 !important;
+  font-size: 0.8rem;
+}
+
+/* Excerpt */
+.recent-post-info .content {
+  color: #7A6E5E !important;
+  font-size: 0.875rem;
+  line-height: 1.65;
+  margin-top: 10px;
+}
+
+/* ── Aside (left sidebar) ──────────────────── */
+#aside-content .card-widget {
+  background: #FFFFFF !important;
+  border: 1px solid #E6DFD1 !important;
+  border-radius: 12px !important;
+  margin-bottom: 12px !important;
+  padding: 18px 20px !important;
+  overflow: hidden;
+  transition: box-shadow 0.2s ease;
+}
+
+#aside-content .card-widget:hover {
+  box-shadow: 0 3px 12px rgba(124, 99, 72, 0.08) !important;
+}
+
+/* Author card */
+.card-info.text-center .avatar-img img {
+  border: 2px solid #E6DFD1;
+}
+
+.card-info .author-info-name {
+  color: #2A2218 !important;
+  font-size: 1.05rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.01em;
+}
+
+.card-info .author-info-description {
+  color: #7A6E5E !important;
+  font-size: 0.83rem !important;
+  margin-top: 2px;
+}
+
+/* Stats row */
+.site-data {
+  margin: 12px 0 6px !important;
+  border-top: 1px solid #F0EBE1;
+  padding-top: 10px;
+}
+
+.site-data .headline {
+  color: #B2A699 !important;
+  font-size: 0.72rem !important;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.site-data .length-num {
+  color: #2A2218 !important;
+  font-size: 1rem !important;
+  font-weight: 500;
+}
+
+/* GitHub button */
+#card-info-btn {
+  background: #2A2218 !important;
+  border-radius: 8px !important;
+  color: #F8F5EF !important;
+  font-size: 0.82rem !important;
+  padding: 6px 16px !important;
+  margin-top: 6px;
+  transition: background 0.2s ease;
+}
+
+#card-info-btn:hover {
+  background: #7C6348 !important;
+}
+
+/* Social icons */
+.card-info-social-icons .social-icon i,
+.card-info-social-icons a {
+  color: #7A6E5E !important;
+  transition: color 0.2s;
+}
+
+.card-info-social-icons a:hover i {
+  color: #7C6348 !important;
+}
+
+/* Card headlines */
+.item-headline {
+  margin-bottom: 10px !important;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #F0EBE1;
+}
+
+.item-headline span {
+  color: #7A6E5E !important;
+  font-size: 0.75rem !important;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+
+.item-headline i {
+  color: #7C6348 !important;
+  margin-right: 6px;
+}
+
+/* Recent posts in sidebar */
+.aside-list-item {
+  border-bottom: 1px solid #F4F0E8;
+  padding: 7px 0 !important;
+}
+
+.aside-list-item:last-child {
+  border-bottom: none;
+}
+
+.aside-list-item .content .title {
+  color: #2A2218 !important;
+  font-size: 0.85rem !important;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+.aside-list-item .content .title:hover {
+  color: #7C6348 !important;
+}
+
+.aside-list-item time {
+  color: #B2A699 !important;
+  font-size: 0.73rem !important;
+  margin-top: 2px;
+  display: block;
+}
+
+/* Tags cloud */
+.card-tag-cloud a {
+  color: #7A6E5E !important;
+  background: rgba(124, 99, 72, 0.06) !important;
+  border-radius: 20px;
+  padding: 3px 9px;
+  margin: 2px 3px;
+  display: inline-block;
+  font-size: 0.8rem !important;
+  transition: all 0.15s;
+}
+
+.card-tag-cloud a:hover {
+  color: #7C6348 !important;
+  background: rgba(124, 99, 72, 0.13) !important;
+}
+
+/* Archives */
+.card-archive-list-item {
+  border-bottom: 1px solid #F4F0E8;
+  padding: 5px 0 !important;
+}
+
+.card-archive-list-item:last-child {
+  border-bottom: none;
+}
+
+.card-archive-list-link {
+  color: #2A2218 !important;
+  font-size: 0.85rem !important;
+}
+
+.card-archive-list-link:hover {
+  color: #7C6348 !important;
+}
+
+.card-archive-list-date {
+  color: #B2A699 !important;
+  font-size: 0.75rem !important;
+}
+
+.card-archive-list-count {
+  color: #B2A699 !important;
+  font-size: 0.75rem !important;
+}
+
+/* Webinfo */
+.webinfo-item {
+  border-bottom: 1px solid #F4F0E8;
+  padding: 5px 0 !important;
+}
+
+.webinfo-item:last-child {
+  border-bottom: none;
+}
+
+.webinfo-item .item-name {
+  color: #7A6E5E !important;
+  font-size: 0.82rem !important;
+}
+
+.webinfo-item .item-count {
+  color: #2A2218 !important;
+  font-size: 0.82rem !important;
+}
+
+/* ── Pagination ────────────────────────────── */
+.pagination {
+  margin: 20px 0;
+}
+
+.pagination .page-number,
+.pagination .extend {
+  background: #FFFFFF !important;
+  border: 1px solid #E6DFD1 !important;
+  color: #7A6E5E !important;
+  border-radius: 8px !important;
+  margin: 0 3px;
+  transition: all 0.2s;
+}
+
+.pagination .page-number.current,
+.pagination .page-number:hover,
+.pagination .extend:hover {
+  background: #7C6348 !important;
+  border-color: #7C6348 !important;
+  color: #FFFFFF !important;
+}
+
+/* ── Footer ────────────────────────────────── */
+#footer {
+  background: #F0EBE1 !important;
+  border-top: 1px solid #E6DFD1;
+}
+
+#footer,
+#footer a,
+#footer span,
+.footer-copyright,
+.footer-other,
+.framework-info {
+  color: #7A6E5E !important;
+}
+
+#footer a:hover {
+  color: #7C6348 !important;
+}
+
+/* ── Scrollbar ─────────────────────────────── */
+::-webkit-scrollbar {
+  width: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F4F0E8;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #C4B8A8;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #7C6348;
+}
+
+/* ── Dark-mode guard (disable theme switching for now) ── */
+/* If user toggles dark mode, keep core readability */
+[data-theme='dark'] body {
+  background: #1A1612 !important;
+}
+
+[data-theme='dark'] #nav {
+  background: rgba(26, 22, 18, 0.92) !important;
+  box-shadow: 0 1px 0 #2E2820 !important;
+}
+
+[data-theme='dark'] .recent-post-item,
+[data-theme='dark'] #aside-content .card-widget {
+  background: #231F1A !important;
+  border-color: #2E2820 !important;
+}
+
+[data-theme='dark'] .recent-post-info .article-title,
+[data-theme='dark'] .card-info .author-info-name,
+[data-theme='dark'] .aside-list-item .content .title {
+  color: #E8E0D4 !important;
+}
