@@ -1,0 +1,232 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>Claude Code Agent Team 架构分析：Multi-Agent 协作的范式跃迁 | infinite</title><meta name="author" content="helson"><meta name="copyright" content="helson"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="F8F5EF"><meta name="description" content="本文梳理 Claude Code 新增的 Agent Team 功能的核心机制，并与既有 Sub-Agent 体系做结构性对比。目标读者：对 AI 工程架构感兴趣但不一定有编程背景的人。   背景Claude Code 的 Sub-Agent 能力已经相对成熟——给它一个任务，它会在独立进程中并行处理多个子任务，完成后把结果汇回主对话。这套机制在大多数场景下够用。 但有一类任务它处理得不好：子任">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Claude Code Agent Team 架构分析：Multi-Agent 协作的范式跃迁">
+<meta property="og:url" content="https://helsome.github.io/2026/04/01/claude-code-agent-team-analysis/index.html">
+<meta property="og:site_name" content="infinite">
+<meta property="og:description" content="本文梳理 Claude Code 新增的 Agent Team 功能的核心机制，并与既有 Sub-Agent 体系做结构性对比。目标读者：对 AI 工程架构感兴趣但不一定有编程背景的人。   背景Claude Code 的 Sub-Agent 能力已经相对成熟——给它一个任务，它会在独立进程中并行处理多个子任务，完成后把结果汇回主对话。这套机制在大多数场景下够用。 但有一类任务它处理得不好：子任">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://helsome.github.io/img/butterfly-icon.png">
+<meta property="article:published_time" content="2026-04-01T04:00:00.000Z">
+<meta property="article:modified_time" content="2026-04-01T07:52:05.976Z">
+<meta property="article:author" content="helson">
+<meta property="article:tag" content="AI">
+<meta property="article:tag" content="Claude">
+<meta property="article:tag" content="Multi-Agent">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://helsome.github.io/img/butterfly-icon.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Claude Code Agent Team 架构分析：Multi-Agent 协作的范式跃迁",
+  "url": "https://helsome.github.io/2026/04/01/claude-code-agent-team-analysis/",
+  "image": "https://helsome.github.io/img/butterfly-icon.png",
+  "datePublished": "2026-04-01T04:00:00.000Z",
+  "dateModified": "2026-04-01T07:52:05.976Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "helson",
+      "url": "https://helsome.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://helsome.github.io/2026/04/01/claude-code-agent-team-analysis/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//fonts.googleapis.com" crossorigin=""/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.4"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', 'F8F5EF')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&amp;display=swap" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.13.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'Claude Code Agent Team 架构分析：Multi-Agent 协作的范式跃迁',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="/css/custom.css"><meta name="generator" content="Hexo 8.1.1"></head><body><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">infinite</span></a><a class="nav-page-title" href="/"><span class="site-name">Claude Code Agent Team 架构分析：Multi-Agent 协作的范式跃迁</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">Claude Code Agent Team 架构分析：Multi-Agent 协作的范式跃迁</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-04-01T04:00:00.000Z" title="发表于 2026-04-01 12:00:00">2026-04-01</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-04-01T07:52:05.976Z" title="更新于 2026-04-01 15:52:05">2026-04-01</time></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div><article class="container post-content" id="article-container"><blockquote>
+<p>本文梳理 Claude Code 新增的 Agent Team 功能的核心机制，并与既有 Sub-Agent 体系做结构性对比。目标读者：对 AI 工程架构感兴趣但不一定有编程背景的人。</p>
+</blockquote>
+<hr>
+<h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>Claude Code 的 Sub-Agent 能力已经相对成熟——给它一个任务，它会在独立进程中并行处理多个子任务，完成后把结果汇回主对话。这套机制在大多数场景下够用。</p>
+<p>但有一类任务它处理得不好：<strong>子任务之间存在强依赖关系，或需要实时协商</strong>。比如你想让 AI 同时负责写文档和写测试，而测试必须基于最新的接口定义——这时候两个 Sub-Agent 的孤立执行就会出问题。它们各自为政，没有任何横向沟通通道。</p>
+<p>Agent Team 就是针对这个问题设计的。</p>
+<hr>
+<h2 id="架构设计"><a href="#架构设计" class="headerlink" title="架构设计"></a>架构设计</h2><p>Agent Team 的核心抽象由四个组件构成：</p>
+<p><strong>Main Agent（队长）</strong>：解析用户意图，拆解任务，创建并分配队友，最终汇总交付。</p>
+<p><strong>Team Members（队友）</strong>：每个队友在独立的上下文窗口中运行，持有自己的”大脑”。这意味着队友 A 写了什么，队友 B 不会自动感知——这是刻意的设计，目的是防止上下文污染。</p>
+<p><strong>Mailbox 系统</strong>：队友之间显式通信的唯一渠道。需要共享信息时，必须主动发消息；系统不会自动广播状态。</p>
+<p><strong>共享任务看板</strong>：所有队友可见的任务列表。任务状态在这里更新，队长和队友都可以认领或查看。</p>
+<p>协作流程：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">用户描述需求</span><br><span class="line">  → 队长拆解为子任务 → 创建队友并分配任务</span><br><span class="line">    → 队友并行执行 → 通过 Mailbox 互相通信</span><br><span class="line">      → 任务依赖自动阻塞（C 等 A 完成后再开始）</span><br><span class="line">        → 队长汇总 → 交付用户</span><br></pre></td></tr></table></figure>
+
+<p>这套设计的一个值得关注的细节是<strong>用户可达性</strong>：用户可以直接和任意队友对话，而不是只能通过队长中转。这在 Sub-Agent 体系里是做不到的——Sub-Agent 对用户完全不可见。</p>
+<hr>
+<h2 id="与-Sub-Agent-的结构性差异"><a href="#与-Sub-Agent-的结构性差异" class="headerlink" title="与 Sub-Agent 的结构性差异"></a>与 Sub-Agent 的结构性差异</h2><p>拓扑结构是最根本的区别。</p>
+<p>Sub-Agent 是<strong>星型拓扑</strong>：主 Agent 是唯一的调度中心和信息枢纽，所有 Sub-Agent 只跟它通信，彼此之间没有连接。这意味着主 Agent 的上下文会成为瓶颈——所有的进展汇报最终都要流回来。</p>
+<p>Agent Team 是<strong>网状拓扑</strong>：成员之间可以直接通信，任务可以自行认领，不需要每个决策都经过队长。队长负责战略层面的协调，不参与每一次细节对齐。</p>
+<p>其他几个关键差异：</p>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>Sub-Agent</th>
+<th>Agent Team</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>生命周期</td>
+<td>一次性，任务结束即销毁</td>
+<td>持久运行，可接收新指令</td>
+</tr>
+<tr>
+<td>通信机制</td>
+<td>无横向通信</td>
+<td>Mailbox 显式通信</td>
+</tr>
+<tr>
+<td>上下文管理</td>
+<td>结果摘要仍会流回主对话</td>
+<td>各队友上下文独立，不污染主对话</td>
+</tr>
+<tr>
+<td>任务依赖处理</td>
+<td>需要用户手动排序</td>
+<td>系统自动阻塞依赖任务</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="一个工程级验证案例"><a href="#一个工程级验证案例" class="headerlink" title="一个工程级验证案例"></a>一个工程级验证案例</h2><p>最能说明问题的是 Anthropic 安全研究员 Nicholas Carlini 在 2026 年 2 月发表的工程博客。他用 Agent Team 指挥了 16 个 Claude 实例并行工作，从零构建了一个 C 编译器：超过 10 万行代码，通过数百个测试用例。</p>
+<p>做法是把编译器拆成词法分析器、语法解析器、类型检查器、代码生成器等模块，分配给不同的队友。各模块的接口定义通过 Mailbox 流转——词法分析器定好 Token 格式后，语法解析器立即收到通知并开始对接。这种协作方式在 Sub-Agent 体系下需要人工介入，在 Agent Team 里自动发生。</p>
+<p>这个案例的意义不在于”16 个 AI 一起工作”这个数字，而在于：<strong>AI 之间的接口协商和冲突解决，已经可以在没有人工干预的情况下完成</strong>。</p>
+<hr>
+<h2 id="选择标准"><a href="#选择标准" class="headerlink" title="选择标准"></a>选择标准</h2><p>判断用 Sub-Agent 还是 Agent Team，问两个问题就够了：</p>
+<ol>
+<li>子任务之间需要互相沟通吗？</li>
+<li>子任务数量超过 3 个且存在依赖关系吗？</li>
+</ol>
+<p>两个都是否定答案，用 Sub-Agent——更快、更省 token。有一个肯定答案，用 Agent Team。</p>
+<hr>
+<h2 id="现有局限"><a href="#现有局限" class="headerlink" title="现有局限"></a>现有局限</h2><p>这个功能目前是实验性的，默认关闭。已知限制：不支持会话恢复、不支持嵌套团队、费用比 Sub-Agent 高。</p>
+<p>开启方式：在 <code>~/.claude/settings.json</code> 里添加对应配置项，或在启动前临时设置环境变量。</p>
+<hr>
+<h2 id="结语"><a href="#结语" class="headerlink" title="结语"></a>结语</h2><p>从 Sub-Agent 到 Agent Team，变化的不只是功能。Sub-Agent 体系下，你仍然是调度中心；Agent Team 体系下，你是目标的定义者，执行层完全交给团队自治。</p>
+<p>这个转变对用户意味着什么？<strong>你需要更清晰地定义任务边界，而不是更清晰地描述执行步骤</strong>。一个写得好的目标描述，比一份详细的操作流程更有价值。这可能是使用 Agent Team 最需要适应的地方。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://helsome.github.io">helson</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://helsome.github.io/2026/04/01/claude-code-agent-team-analysis/">https://helsome.github.io/2026/04/01/claude-code-agent-team-analysis/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://helsome.github.io" target="_blank">infinite</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/AI/">AI</a><a class="post-meta__tags" href="/tags/Claude/">Claude</a><a class="post-meta__tags" href="/tags/Multi-Agent/">Multi-Agent</a></div><div class="post-share"><div class="social-share" data-image="/img/butterfly-icon.png" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related full-width" href="/2026/04/01/claude-code-skill-discovery/" title="Claude Code 技能发现机制深度解析"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">Claude Code 技能发现机制深度解析</div></div><div class="info-2"><div class="info-item-1"> 基于源码逆向分析，详解 EXPERIMENTAL_SKILL_SEARCH 特性标志控制下的完整技能发现与加载系统。   目录 系统概览 Feature Flag 门控机制 三层发现架构 层一：Turn-0 自动发现 层二：主动搜索工具 DiscoverSkillsTool 层三：远程技能系统   skill_discovery Attachment 数据结构 SKILL.md 扫描与本地加载 SkillTool 三条执行路径 遥测：was_discovered 字段 完整调用流程图 关键源码位置速查表   系统概览Claude Code 的技能发现系统是一个独立于 Proactive 模式的子系统，普通对话模式同样可用。整个系统由编译期 Feature Flag EXPERIMENTAL_SKILL_SEARCH 控制：  外部构建（npm 包）：Flag 为 false，相关代码在打包阶段被死代码消除（DCE），连 &#39;skill_discovery&#39; 字符串字面量都不会出现在产物中。 Anthropic 内部构建：Flag 为 true，完整系统生效。部分功...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2026/04/01/feishu-to-claude-skill/" title="利用 Claude Code 抓取飞书知识库转换为 Skill 指南"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-04-01</div><div class="info-item-2">利用 Claude Code 抓取飞书知识库转换为 Skill 指南</div></div><div class="info-2"><div class="info-item-1">这是什么把飞书 Wiki 里的技术文档（Bug 案例、SOP、流程指南等）拉下来，整理成 Claude Code 插件可以直接引用的内置知识库 Skill。 产出物：skills/&lt;name&gt;/SKILL.md + references/*.md，纯静态文件，运行时零 API 调用。  为什么用「双终端」模式 一句话：省钱。  制作一个知识库 Skill 的工作量大致分两类：    工作类型 举例 特点    动脑的 确定知识范围、设计 Skill 结构、写 SKILL.md 路由表、Review 产出质量 需要强推理，量少   动手的 遍历飞书文档树、逐篇 fetch、清理飞书特有标签、合并整理、控制体积 不需要强推理，量大   如果全程用 Opus（贵）干，大量 token 花在「读飞书文档 → 复制粘贴 → 清理格式」这种搬砖活上，很浪费。 所以我们拆成两个终端： 123456789┌─────────────────────────┐     提示词文件      ┌─────────────────────────┐│  终端 A: Plan Model  ...</div></div></div></a><a class="pagination-related" href="/2026/04/01/claude-code-skill-discovery/" title="Claude Code 技能发现机制深度解析"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-04-01</div><div class="info-item-2">Claude Code 技能发现机制深度解析</div></div><div class="info-2"><div class="info-item-1"> 基于源码逆向分析，详解 EXPERIMENTAL_SKILL_SEARCH 特性标志控制下的完整技能发现与加载系统。   目录 系统概览 Feature Flag 门控机制 三层发现架构 层一：Turn-0 自动发现 层二：主动搜索工具 DiscoverSkillsTool 层三：远程技能系统   skill_discovery Attachment 数据结构 SKILL.md 扫描与本地加载 SkillTool 三条执行路径 遥测：was_discovered 字段 完整调用流程图 关键源码位置速查表   系统概览Claude Code 的技能发现系统是一个独立于 Proactive 模式的子系统，普通对话模式同样可用。整个系统由编译期 Feature Flag EXPERIMENTAL_SKILL_SEARCH 控制：  外部构建（npm 包）：Flag 为 false，相关代码在打包阶段被死代码消除（DCE），连 &#39;skill_discovery&#39; 字符串字面量都不会出现在产物中。 Anthropic 内部构建：Flag 为 true，完整系统生效。部分功...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/butterfly-icon.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">helson</div><div class="author-info-description">吾生有涯，其知无涯</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">15</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">10</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">0</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/helsome"><i class="fab fa-github"></i><span>GitHub</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/helsome" target="_blank" title="Github"><i class="fab fa-github" style="color: #2A2218;"></i></a></div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%83%8C%E6%99%AF"><span class="toc-number">1.</span> <span class="toc-text">背景</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1"><span class="toc-number">2.</span> <span class="toc-text">架构设计</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%8E-Sub-Agent-%E7%9A%84%E7%BB%93%E6%9E%84%E6%80%A7%E5%B7%AE%E5%BC%82"><span class="toc-number">3.</span> <span class="toc-text">与 Sub-Agent 的结构性差异</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E4%B8%AA%E5%B7%A5%E7%A8%8B%E7%BA%A7%E9%AA%8C%E8%AF%81%E6%A1%88%E4%BE%8B"><span class="toc-number">4.</span> <span class="toc-text">一个工程级验证案例</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%80%89%E6%8B%A9%E6%A0%87%E5%87%86"><span class="toc-number">5.</span> <span class="toc-text">选择标准</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%8E%B0%E6%9C%89%E5%B1%80%E9%99%90"><span class="toc-number">6.</span> <span class="toc-text">现有局限</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BB%93%E8%AF%AD"><span class="toc-number">7.</span> <span class="toc-text">结语</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/04/01/claude-code-agent-team-analysis/" title="Claude Code Agent Team 架构分析：Multi-Agent 协作的范式跃迁">Claude Code Agent Team 架构分析：Multi-Agent 协作的范式跃迁</a><time datetime="2026-04-01T04:00:00.000Z" title="发表于 2026-04-01 12:00:00">2026-04-01</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/04/01/feishu-to-claude-skill/" title="利用 Claude Code 抓取飞书知识库转换为 Skill 指南">利用 Claude Code 抓取飞书知识库转换为 Skill 指南</a><time datetime="2026-03-31T16:00:00.000Z" title="发表于 2026-04-01 00:00:00">2026-04-01</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/04/01/claude-code-skill-discovery/" title="Claude Code 技能发现机制深度解析">Claude Code 技能发现机制深度解析</a><time datetime="2026-03-31T16:00:00.000Z" title="发表于 2026-04-01 00:00:00">2026-04-01</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/10/25/brute-ratel-C4-badger%E5%85%A8%E5%88%86%E6%9E%90%E6%96%87%E6%A1%A3/" title="brute ratel C4 badger全分析文档">brute ratel C4 badger全分析文档</a><time datetime="2024-10-25T11:37:08.000Z" title="发表于 2024-10-25 19:37:08">2024-10-25</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/10/25/PE%E8%A7%A3%E6%9E%90%E5%99%A8%E7%BC%96%E5%86%99/" title="PE解析器编写">PE解析器编写</a><time datetime="2024-10-25T11:29:28.000Z" title="发表于 2024-10-25 19:29:28">2024-10-25</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2025 - 2026 By helson</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.1</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.4</a></span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.4"></script><script src="/js/main.js?v=5.5.4"></script><div class="js-pjax"></div><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>

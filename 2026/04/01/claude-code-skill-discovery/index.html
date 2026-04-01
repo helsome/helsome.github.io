@@ -1,0 +1,582 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>Claude Code 技能发现机制深度解析 | infinite</title><meta name="author" content="helson"><meta name="copyright" content="helson"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="F8F5EF"><meta name="description" content="基于源码逆向分析，详解 EXPERIMENTAL_SKILL_SEARCH 特性标志控制下的完整技能发现与加载系统。   目录 系统概览 Feature Flag 门控机制 三层发现架构 层一：Turn-0 自动发现 层二：主动搜索工具 DiscoverSkillsTool 层三：远程技能系统   skill_discovery Attachment 数据结构 SKILL.md 扫描与本地加载">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Claude Code 技能发现机制深度解析">
+<meta property="og:url" content="https://helsome.github.io/2026/04/01/claude-code-skill-discovery/index.html">
+<meta property="og:site_name" content="infinite">
+<meta property="og:description" content="基于源码逆向分析，详解 EXPERIMENTAL_SKILL_SEARCH 特性标志控制下的完整技能发现与加载系统。   目录 系统概览 Feature Flag 门控机制 三层发现架构 层一：Turn-0 自动发现 层二：主动搜索工具 DiscoverSkillsTool 层三：远程技能系统   skill_discovery Attachment 数据结构 SKILL.md 扫描与本地加载">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://helsome.github.io/img/butterfly-icon.png">
+<meta property="article:published_time" content="2026-03-31T16:00:00.000Z">
+<meta property="article:modified_time" content="2026-04-01T05:55:06.377Z">
+<meta property="article:author" content="helson">
+<meta property="article:tag" content="AI">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://helsome.github.io/img/butterfly-icon.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Claude Code 技能发现机制深度解析",
+  "url": "https://helsome.github.io/2026/04/01/claude-code-skill-discovery/",
+  "image": "https://helsome.github.io/img/butterfly-icon.png",
+  "datePublished": "2026-03-31T16:00:00.000Z",
+  "dateModified": "2026-04-01T05:55:06.377Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "helson",
+      "url": "https://helsome.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://helsome.github.io/2026/04/01/claude-code-skill-discovery/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//fonts.googleapis.com" crossorigin=""/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.4"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', 'F8F5EF')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&amp;display=swap" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.13.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'Claude Code 技能发现机制深度解析',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="/css/custom.css"><meta name="generator" content="Hexo 8.1.1"></head><body><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">infinite</span></a><a class="nav-page-title" href="/"><span class="site-name">Claude Code 技能发现机制深度解析</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">Claude Code 技能发现机制深度解析</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-03-31T16:00:00.000Z" title="发表于 2026-04-01 00:00:00">2026-04-01</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-04-01T05:55:06.377Z" title="更新于 2026-04-01 13:55:06">2026-04-01</time></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div><article class="container post-content" id="article-container"><blockquote>
+<p>基于源码逆向分析，详解 <code>EXPERIMENTAL_SKILL_SEARCH</code> 特性标志控制下的完整技能发现与加载系统。</p>
+</blockquote>
+<hr>
+<h2 id="目录"><a href="#目录" class="headerlink" title="目录"></a>目录</h2><ol>
+<li><a href="#%E7%B3%BB%E7%BB%9F%E6%A6%82%E8%A7%88">系统概览</a></li>
+<li><a href="#feature-flag-%E9%97%A8%E6%8E%A7%E6%9C%BA%E5%88%B6">Feature Flag 门控机制</a></li>
+<li><a href="#%E4%B8%89%E5%B1%82%E5%8F%91%E7%8E%B0%E6%9E%B6%E6%9E%84">三层发现架构</a><ul>
+<li><a href="#%E5%B1%82%E4%B8%80turn-0-%E8%87%AA%E5%8A%A8%E5%8F%91%E7%8E%B0">层一：Turn-0 自动发现</a></li>
+<li><a href="#%E5%B1%82%E4%BA%8C%E4%B8%BB%E5%8A%A8%E6%90%9C%E7%B4%A2%E5%B7%A5%E5%85%B7-discoverskillstool">层二：主动搜索工具 DiscoverSkillsTool</a></li>
+<li><a href="#%E5%B1%82%E4%B8%89%E8%BF%9C%E7%A8%8B%E6%8A%80%E8%83%BD%E7%B3%BB%E7%BB%9F">层三：远程技能系统</a></li>
+</ul>
+</li>
+<li><a href="#skill_discovery-attachment-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84">skill_discovery Attachment 数据结构</a></li>
+<li><a href="#skillmd-%E6%89%AB%E6%8F%8F%E4%B8%8E%E6%9C%AC%E5%9C%B0%E5%8A%A0%E8%BD%BD">SKILL.md 扫描与本地加载</a></li>
+<li><a href="#skilltool-%E4%B8%89%E6%9D%A1%E6%89%A7%E8%A1%8C%E8%B7%AF%E5%BE%84">SkillTool 三条执行路径</a></li>
+<li><a href="#%E9%81%A5%E6%B5%8Bwas_discovered-%E5%AD%97%E6%AE%B5">遥测：was_discovered 字段</a></li>
+<li><a href="#%E5%AE%8C%E6%95%B4%E8%B0%83%E7%94%A8%E6%B5%81%E7%A8%8B%E5%9B%BE">完整调用流程图</a></li>
+<li><a href="#%E5%85%B3%E9%94%AE%E6%BA%90%E7%A0%81%E4%BD%8D%E7%BD%AE%E9%80%9F%E6%9F%A5%E8%A1%A8">关键源码位置速查表</a></li>
+</ol>
+<hr>
+<h2 id="系统概览"><a href="#系统概览" class="headerlink" title="系统概览"></a>系统概览</h2><p>Claude Code 的技能发现系统是一个<strong>独立于 Proactive 模式</strong>的子系统，普通对话模式同样可用。整个系统由编译期 Feature Flag <code>EXPERIMENTAL_SKILL_SEARCH</code> 控制：</p>
+<ul>
+<li><strong>外部构建（npm 包）</strong>：Flag 为 <code>false</code>，相关代码在打包阶段被死代码消除（DCE），连 <code>&#39;skill_discovery&#39;</code> 字符串字面量都不会出现在产物中。</li>
+<li><strong>Anthropic 内部构建</strong>：Flag 为 <code>true</code>，完整系统生效。部分功能还需额外满足 <code>process.env.USER_TYPE === &#39;ant&#39;</code>。</li>
+</ul>
+<p>系统的核心职责：<strong>在每轮对话中，自动将与当前任务相关的技能推送给模型，让模型无需记住所有技能名称，按需调用即可。</strong></p>
+<hr>
+<h2 id="Feature-Flag-门控机制"><a href="#Feature-Flag-门控机制" class="headerlink" title="Feature Flag 门控机制"></a>Feature Flag 门控机制</h2><p>Feature Flag 是 Bun 编译期 <code>feature()</code> 调用，不是运行时环境变量。以下是三个最核心的门控位置：</p>
+<p><strong><code>src/tools/SkillTool/SkillTool.ts</code> 第 108–115 行</strong> — 远程技能模块加载：</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> remoteSkillModules = <span class="title function_">feature</span>(<span class="string">&#x27;EXPERIMENTAL_SKILL_SEARCH&#x27;</span>)</span><br><span class="line">  ? &#123;</span><br><span class="line">      ...(<span class="built_in">require</span>(<span class="string">&#x27;../../services/skillSearch/remoteSkillState.js&#x27;</span>)),</span><br><span class="line">      ...(<span class="built_in">require</span>(<span class="string">&#x27;../../services/skillSearch/remoteSkillLoader.js&#x27;</span>)),</span><br><span class="line">      ...(<span class="built_in">require</span>(<span class="string">&#x27;../../services/skillSearch/telemetry.js&#x27;</span>)),</span><br><span class="line">      ...(<span class="built_in">require</span>(<span class="string">&#x27;../../services/skillSearch/featureCheck.js&#x27;</span>)),</span><br><span class="line">    &#125;</span><br><span class="line">  : <span class="literal">null</span></span><br></pre></td></tr></table></figure>
+
+<p><strong><code>src/query.ts</code> 第 66–68 行</strong> — prefetch 模块加载：</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> skillPrefetch = <span class="title function_">feature</span>(<span class="string">&#x27;EXPERIMENTAL_SKILL_SEARCH&#x27;</span>)</span><br><span class="line">  ? (<span class="built_in">require</span>(<span class="string">&#x27;./services/skillSearch/prefetch.js&#x27;</span>))</span><br><span class="line">  : <span class="literal">null</span></span><br></pre></td></tr></table></figure>
+
+<p><strong><code>src/utils/attachments.ts</code> 第 95–102 行</strong> — attachment 组装时的门控：</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> skillSearchModules = <span class="title function_">feature</span>(<span class="string">&#x27;EXPERIMENTAL_SKILL_SEARCH&#x27;</span>)</span><br><span class="line">  ? &#123;</span><br><span class="line">      <span class="attr">featureCheck</span>: <span class="built_in">require</span>(<span class="string">&#x27;../services/skillSearch/featureCheck.js&#x27;</span>),</span><br><span class="line">      <span class="attr">prefetch</span>: <span class="built_in">require</span>(<span class="string">&#x27;../services/skillSearch/prefetch.js&#x27;</span>),</span><br><span class="line">    &#125;</span><br><span class="line">  : <span class="literal">null</span></span><br></pre></td></tr></table></figure>
+
+<p>除编译期 Flag 外，还有一个<strong>运行时副门控</strong>：远程技能和 Canonical 技能的调用路径大量检查 <code>process.env.USER_TYPE === &#39;ant&#39;</code>（位于 SkillTool.ts 第 378、494、606 行），确保远程技能体系只对 Anthropic 员工开放。</p>
+<hr>
+<h2 id="三层发现架构"><a href="#三层发现架构" class="headerlink" title="三层发现架构"></a>三层发现架构</h2><h3 id="层一：Turn-0-自动发现"><a href="#层一：Turn-0-自动发现" class="headerlink" title="层一：Turn-0 自动发现"></a>层一：Turn-0 自动发现</h3><p><strong>入口：</strong> <code>src/utils/attachments.ts</code> 的 <code>getAttachmentMessages()</code> 函数，第 801–812 行：</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">...(<span class="title function_">feature</span>(<span class="string">&#x27;EXPERIMENTAL_SKILL_SEARCH&#x27;</span>) &amp;&amp;</span><br><span class="line">skillSearchModules &amp;&amp;</span><br><span class="line">!options?.<span class="property">skipSkillDiscovery</span></span><br><span class="line">  ? [</span><br><span class="line">      <span class="title function_">maybe</span>(<span class="string">&#x27;skill_discovery&#x27;</span>, <span class="function">() =&gt;</span></span><br><span class="line">        skillSearchModules.<span class="property">prefetch</span>.<span class="title function_">getTurnZeroSkillDiscovery</span>(</span><br><span class="line">          input,        <span class="comment">// 用户消息文本，作为搜索信号</span></span><br><span class="line">          messages ?? [],</span><br><span class="line">          context,</span><br><span class="line">        ),</span><br><span class="line">      ),</span><br><span class="line">    ]</span><br><span class="line">  : []),</span><br></pre></td></tr></table></figure>
+
+<p>这个调用是<strong>阻塞式</strong>的 —— 发生在第 0 轮（Turn-0），此时模型还没有开始输出，没有其他工作可以用来掩盖延迟。<code>getTurnZeroSkillDiscovery</code> 内部会针对用户消息执行 AKI 向量搜索或关键词匹配，返回相关技能列表。</p>
+<p><strong><code>skipSkillDiscovery</code> 防护</strong>是关键设计：当 SkillTool 加载一个技能的 SKILL.md 内容（可能长达 110KB）并将其作为 <code>input</code> 传入时，必须跳过发现流程，否则会对每次技能调用触发 ~3.3 秒的 AKI 查询。</p>
+<p><strong>轮间异步 Prefetch：</strong> 在后续轮次中，系统改用异步 prefetch 掩盖延迟：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">src/query.ts 第 331 行（模型开始流式输出前）：</span><br><span class="line">  startSkillDiscoveryPrefetch(null, messages, toolUseContext)</span><br><span class="line">  [与模型流式输出并发执行]</span><br><span class="line"></span><br><span class="line">src/query.ts 第 1617–1628 行（工具执行完毕后）：</span><br><span class="line">  collectSkillDiscoveryPrefetch(pendingSkillPrefetch)</span><br><span class="line">  [收集结果，注入下一轮 attachment]</span><br></pre></td></tr></table></figure>
+
+<p>Prefetch 还受<strong>写操作检测</strong>门控（write-pivot guard）：只在预计会产生写操作的轮次触发，避免在纯读查询上浪费 AKI 调用。</p>
+<hr>
+<h3 id="层二：主动搜索工具-DiscoverSkillsTool"><a href="#层二：主动搜索工具-DiscoverSkillsTool" class="headerlink" title="层二：主动搜索工具 DiscoverSkillsTool"></a>层二：主动搜索工具 DiscoverSkillsTool</h3><p>这是给模型主动调用的工具，用于”中途转向”或”非典型工作流”场景。其 prompt 模块位于 <code>src/tools/DiscoverSkillsTool/prompt.js</code>（Anthropic 内部，源码中不可见）。</p>
+<p>系统提示中注入的引导语（<code>src/constants/prompts.ts</code> 第 333–341 行）：</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="title function_">getDiscoverSkillsGuidance</span>(<span class="params"></span>): <span class="built_in">string</span> | <span class="literal">null</span> &#123;</span><br><span class="line">  <span class="keyword">if</span> (<span class="title function_">feature</span>(<span class="string">&#x27;EXPERIMENTAL_SKILL_SEARCH&#x27;</span>) &amp;&amp; <span class="variable constant_">DISCOVER_SKILLS_TOOL_NAME</span> !== <span class="literal">null</span>) &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="string">`Relevant skills are automatically surfaced each turn as &quot;Skills relevant to your task:&quot; reminders.</span></span><br><span class="line"><span class="string">If you&#x27;re about to do something those don&#x27;t cover — a mid-task pivot, an unusual workflow,</span></span><br><span class="line"><span class="string">a multi-step plan — call <span class="subst">$&#123;DISCOVER_SKILLS_TOOL_NAME&#125;</span> with a specific description of what you&#x27;re doing.</span></span><br><span class="line"><span class="string">Skills already visible or loaded are filtered automatically.</span></span><br><span class="line"><span class="string">Skip this if the surfaced skills already cover your next action.`</span></span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> <span class="literal">null</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>关键设计</strong>：已展示过的技能自动过滤，不重复推荐。<code>DiscoverSkillsTool</code> 的工具名常量通过条件 require 加载（第 86–91 行）：</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> <span class="attr">DISCOVER_SKILLS_TOOL_NAME</span>: <span class="built_in">string</span> | <span class="literal">null</span> = <span class="title function_">feature</span>(<span class="string">&#x27;EXPERIMENTAL_SKILL_SEARCH&#x27;</span>)</span><br><span class="line">  ? (<span class="built_in">require</span>(<span class="string">&#x27;../tools/DiscoverSkillsTool/prompt.js&#x27;</span>)).<span class="property">DISCOVER_SKILLS_TOOL_NAME</span></span><br><span class="line">  : <span class="literal">null</span></span><br></pre></td></tr></table></figure>
+
+<hr>
+<h3 id="层三：远程技能系统"><a href="#层三：远程技能系统" class="headerlink" title="层三：远程技能系统"></a>层三：远程技能系统</h3><p>远程技能使用 <code>_canonical_&lt;slug&gt;</code> 命名格式，模型通过 <code>Skill(&quot;_canonical_some-skill&quot;)</code> 调用。</p>
+<p><strong>两个核心内部模块</strong>（仅 Anthropic 构建可见）：</p>
+<table>
+<thead>
+<tr>
+<th>模块</th>
+<th>职责</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>remoteSkillState.js</code></td>
+<td>维护本 session 内已发现的远程技能元数据（slug → URL 映射），提供 <code>getDiscoveredRemoteSkill(slug)</code> 和 <code>stripCanonicalPrefix(name)</code></td>
+</tr>
+<tr>
+<td><code>remoteSkillLoader.js</code></td>
+<td>从 GCS&#x2F;AKI 拉取 SKILL.md 文件（带本地缓存），提供 <code>loadRemoteSkill(slug, url)</code></td>
+</tr>
+</tbody></table>
+<p>远程技能工作流：</p>
+<ol>
+<li>发现阶段（<code>DiscoverSkills</code> 工具）：AKI 搜索返回 <code>{ slug, url }</code> 元组，写入 <code>remoteSkillState</code></li>
+<li>执行阶段（<code>SkillTool</code>）：检测到 <code>_canonical_</code> 前缀后，从 state 取 URL，调用 <code>loadRemoteSkill</code> 拉取内容</li>
+<li>缓存命中字段 <code>remote_cache_hit</code> 和 <code>remote_load_latency_ms</code> 会记录到遥测</li>
+</ol>
+<hr>
+<h2 id="skill-discovery-Attachment-数据结构"><a href="#skill-discovery-Attachment-数据结构" class="headerlink" title="skill_discovery Attachment 数据结构"></a>skill_discovery Attachment 数据结构</h2><p>Attachment 的类型定义（<code>src/utils/attachments.ts</code> 第 537–542 行）：</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">| &#123;</span><br><span class="line">    <span class="attr">type</span>: <span class="string">&#x27;skill_discovery&#x27;</span></span><br><span class="line">    <span class="attr">skills</span>: &#123; <span class="attr">name</span>: <span class="built_in">string</span>; <span class="attr">description</span>: <span class="built_in">string</span>; <span class="attr">shortId</span>?: <span class="built_in">string</span> &#125;[]</span><br><span class="line">    <span class="attr">signal</span>: <span class="title class_">DiscoverySignal</span>       <span class="comment">// 搜索信号，类型来自内部 signals.js</span></span><br><span class="line">    <span class="attr">source</span>: <span class="string">&#x27;native&#x27;</span> | <span class="string">&#x27;aki&#x27;</span> | <span class="string">&#x27;both&#x27;</span>  <span class="comment">// 来源：本地搜索 / AKI向量搜索 / 两者</span></span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>渲染为模型消息</strong>（<code>src/utils/messages.ts</code> 第 3506–3519 行）：</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (attachment.<span class="property">type</span> === <span class="string">&#x27;skill_discovery&#x27;</span>) &#123;</span><br><span class="line">  <span class="keyword">if</span> (attachment.<span class="property">skills</span>.<span class="property">length</span> === <span class="number">0</span>) <span class="keyword">return</span> []</span><br><span class="line">  <span class="keyword">const</span> lines = attachment.<span class="property">skills</span>.<span class="title function_">map</span>(<span class="function"><span class="params">s</span> =&gt;</span> <span class="string">`- <span class="subst">$&#123;s.name&#125;</span>: <span class="subst">$&#123;s.description&#125;</span>`</span>)</span><br><span class="line">  <span class="keyword">return</span> <span class="title function_">wrapMessagesInSystemReminder</span>([</span><br><span class="line">    <span class="title function_">createUserMessage</span>(&#123;</span><br><span class="line">      <span class="attr">content</span>:</span><br><span class="line">        <span class="string">`Skills relevant to your task:\n\n<span class="subst">$&#123;lines.join(<span class="string">&#x27;\n&#x27;</span>)&#125;</span>\n\n`</span> +</span><br><span class="line">        <span class="string">`These skills encode project-specific conventions. `</span> +</span><br><span class="line">        <span class="string">`Invoke via Skill(&quot;&lt;name&gt;&quot;) for complete instructions.`</span>,</span><br><span class="line">      <span class="attr">isMeta</span>: <span class="literal">true</span>,</span><br><span class="line">    &#125;),</span><br><span class="line">  ])</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>UI 渲染</strong>（<code>src/components/messages/AttachmentMessage.tsx</code> 第 108–122 行）：</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (attachment.<span class="property">type</span> === <span class="string">&#x27;skill_discovery&#x27;</span>) &#123;</span><br><span class="line">  <span class="keyword">const</span> names = attachment.<span class="property">skills</span></span><br><span class="line">    .<span class="title function_">map</span>(<span class="function"><span class="params">s</span> =&gt;</span> s.<span class="property">shortId</span> ? <span class="string">`<span class="subst">$&#123;s.name&#125;</span> [<span class="subst">$&#123;s.shortId&#125;</span>]`</span> : s.<span class="property">name</span>)</span><br><span class="line">    .<span class="title function_">join</span>(<span class="string">&#x27;, &#x27;</span>)</span><br><span class="line">  <span class="comment">// ant 用户额外显示反馈指令</span></span><br><span class="line">  <span class="keyword">const</span> hint = isAntUser &amp;&amp; firstId</span><br><span class="line">    ? <span class="string">` · /skill-feedback <span class="subst">$&#123;firstId&#125;</span> 1=wrong 2=noisy 3=good [comment]`</span></span><br><span class="line">    : <span class="string">&#x27;&#x27;</span></span><br><span class="line">  <span class="keyword">return</span> <span class="language-xml"><span class="tag">&lt;<span class="name">Line</span>&gt;</span></span></span><br><span class="line"><span class="language-xml">    <span class="tag">&lt;<span class="name">Text</span> <span class="attr">bold</span>&gt;</span>&#123;attachment.skills.length&#125;<span class="tag">&lt;/<span class="name">Text</span>&gt;</span> relevant skill(s): &#123;names&#125;&#123;hint&#125;</span></span><br><span class="line"><span class="language-xml">  <span class="tag">&lt;/<span class="name">Line</span>&gt;</span></span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>压缩处理</strong>（<code>src/services/compact/compact.ts</code> 第 211–223 行）：</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="keyword">function</span> <span class="title function_">stripReinjectedAttachments</span>(<span class="params"><span class="attr">messages</span>: <span class="title class_">Message</span>[]</span>): <span class="title class_">Message</span>[] &#123;</span><br><span class="line">  <span class="keyword">if</span> (<span class="title function_">feature</span>(<span class="string">&#x27;EXPERIMENTAL_SKILL_SEARCH&#x27;</span>)) &#123;</span><br><span class="line">    <span class="keyword">return</span> messages.<span class="title function_">filter</span>(</span><br><span class="line">      <span class="function"><span class="params">m</span> =&gt;</span> !(m.<span class="property">type</span> === <span class="string">&#x27;attachment&#x27;</span> &amp;&amp;</span><br><span class="line">        (m.<span class="property">attachment</span>.<span class="property">type</span> === <span class="string">&#x27;skill_discovery&#x27;</span> ||</span><br><span class="line">         m.<span class="property">attachment</span>.<span class="property">type</span> === <span class="string">&#x27;skill_listing&#x27;</span>))</span><br><span class="line">    )</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> messages</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>skill_discovery</code> 和 <code>skill_listing</code> 在送入压缩摘要器前被剥离 —— 它们压缩后无论如何都会重新注入，留着只会浪费 token。</p>
+<hr>
+<h2 id="SKILL-md-扫描与本地加载"><a href="#SKILL-md-扫描与本地加载" class="headerlink" title="SKILL.md 扫描与本地加载"></a>SKILL.md 扫描与本地加载</h2><h3 id="目录扫描顺序"><a href="#目录扫描顺序" class="headerlink" title="目录扫描顺序"></a>目录扫描顺序</h3><p><code>src/skills/loadSkillsDir.ts</code> 的 <code>getSkillDirCommands()</code> 函数（第 638–803 行）按以下顺序扫描：</p>
+<ol>
+<li><code>&lt;managed-policy-path&gt;/.claude/skills/</code>（托管策略）</li>
+<li><code>~/.claude/skills/</code>（用户全局）</li>
+<li>当前工作目录及所有父目录（直到 home）下的 <code>.claude/skills/</code>（项目级）</li>
+<li><code>--add-dir</code> 参数指定目录下的 <code>.claude/skills/</code></li>
+<li>向后兼容：以上所有目录的 <code>.claude/commands/</code>（旧版路径）</li>
+</ol>
+<h3 id="文件结构要求"><a href="#文件结构要求" class="headerlink" title="文件结构要求"></a>文件结构要求</h3><p>必须是 <strong>目录 + SKILL.md</strong> 的结构，不接受直接的 <code>.md</code> 平铺文件：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">.claude/skills/</span><br><span class="line">└── commit/</span><br><span class="line">    └── SKILL.md      ✅</span><br><span class="line">└── commit.md         ❌ (被忽略)</span><br></pre></td></tr></table></figure>
+
+<h3 id="Frontmatter-字段"><a href="#Frontmatter-字段" class="headerlink" title="Frontmatter 字段"></a>Frontmatter 字段</h3><p><code>parseFrontmatter()</code> 解析的字段（第 185–265 行）：</p>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>description</code></td>
+<td>技能简介，用于发现系统匹配</td>
+</tr>
+<tr>
+<td><code>when_to_use</code></td>
+<td>触发时机提示</td>
+</tr>
+<tr>
+<td><code>model</code></td>
+<td>覆盖模型（如强制使用 opus）</td>
+</tr>
+<tr>
+<td><code>effort</code></td>
+<td>努力等级覆盖</td>
+</tr>
+<tr>
+<td><code>allowed-tools</code></td>
+<td>白名单工具列表</td>
+</tr>
+<tr>
+<td><code>argument-hint</code></td>
+<td>参数提示</td>
+</tr>
+<tr>
+<td><code>arguments</code></td>
+<td>参数定义</td>
+</tr>
+<tr>
+<td><code>user-invocable</code></td>
+<td>是否允许用户直接调用</td>
+</tr>
+<tr>
+<td><code>context</code></td>
+<td><code>inline</code>（默认）或 <code>fork</code>（子 Agent）</td>
+</tr>
+<tr>
+<td><code>paths</code></td>
+<td>条件触发路径（仅当匹配文件被修改时激活）</td>
+</tr>
+<tr>
+<td><code>hooks</code></td>
+<td>关联的 Hook 事件</td>
+</tr>
+<tr>
+<td><code>shell</code></td>
+<td>执行前运行的 Shell 命令</td>
+</tr>
+<tr>
+<td><code>version</code></td>
+<td>技能版本</td>
+</tr>
+</tbody></table>
+<h3 id="变量替换"><a href="#变量替换" class="headerlink" title="变量替换"></a>变量替换</h3><p>技能内容加载时（<code>getPromptForCommand()</code>，第 359–369 行）会替换两个占位符：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$&#123;CLAUDE_SKILL_DIR&#125;  →  技能所在目录的绝对路径（用于引用捆绑脚本）</span><br><span class="line">$&#123;CLAUDE_SESSION_ID&#125; →  当前会话 ID</span><br></pre></td></tr></table></figure>
+
+<h3 id="动态发现"><a href="#动态发现" class="headerlink" title="动态发现"></a>动态发现</h3><p><code>discoverSkillDirsForPaths()</code>（第 861–896 行）在文件被触碰时动态向上查找 <code>.claude/skills/</code> 目录。新找到的目录会经过 <code>git check-ignore</code> 验证，被 gitignore 的目录跳过。结合 <code>paths:</code> frontmatter 字段，可以实现<strong>条件技能</strong>：只有当特定文件被修改时，该技能才会出现在列表中。</p>
+<hr>
+<h2 id="SkillTool-三条执行路径"><a href="#SkillTool-三条执行路径" class="headerlink" title="SkillTool 三条执行路径"></a>SkillTool 三条执行路径</h2><p><code>SkillTool.call()</code> 根据技能名称和配置分发到三条路径：</p>
+<h3 id="路径-A：远程-Canonical-技能（ant-专属）"><a href="#路径-A：远程-Canonical-技能（ant-专属）" class="headerlink" title="路径 A：远程 Canonical 技能（ant 专属）"></a>路径 A：远程 Canonical 技能（ant 专属）</h3><p>触发条件：技能名带 <code>_canonical_</code> 前缀 + <code>USER_TYPE === &#39;ant&#39;</code></p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// SkillTool.ts 第 605–613 行</span></span><br><span class="line"><span class="keyword">if</span> (<span class="title function_">feature</span>(<span class="string">&#x27;EXPERIMENTAL_SKILL_SEARCH&#x27;</span>) &amp;&amp; process.<span class="property">env</span>.<span class="property">USER_TYPE</span> === <span class="string">&#x27;ant&#x27;</span>) &#123;</span><br><span class="line">  <span class="keyword">const</span> slug = remoteSkillModules!.<span class="title function_">stripCanonicalPrefix</span>(commandName)</span><br><span class="line">  <span class="keyword">if</span> (slug !== <span class="literal">null</span>) &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="title function_">executeRemoteSkill</span>(slug, commandName, parentMessage, context)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>executeRemoteSkill()</code>（第 969–1108 行）执行流程：</p>
+<ol>
+<li><code>getDiscoveredRemoteSkill(slug)</code> → 取本 session 缓存的 URL</li>
+<li><code>loadRemoteSkill(slug, url)</code> → 从 GCS&#x2F;AKI 拉取内容（带缓存）</li>
+<li>剥离 YAML frontmatter</li>
+<li>替换 <code>${CLAUDE_SKILL_DIR}</code>、<code>${CLAUDE_SESSION_ID}</code></li>
+<li><code>addInvokedSkill()</code> 注册，防止压缩时丢失</li>
+<li>返回 <code>createUserMessage({ content, isMeta: true })</code></li>
+</ol>
+<h3 id="路径-B：Fork-子-Agent-技能"><a href="#路径-B：Fork-子-Agent-技能" class="headerlink" title="路径 B：Fork 子 Agent 技能"></a>路径 B：Fork 子 Agent 技能</h3><p>触发条件：frontmatter 中 <code>context: fork</code></p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 调用 executeForkedSkill()</span></span><br><span class="line"><span class="comment">// → prepareForkedCommandContext() 构建 Agent 定义</span></span><br><span class="line"><span class="comment">// → runAgent() 在完全隔离的子 Agent 中执行</span></span><br><span class="line"><span class="comment">// → extractResultText() 提取最终输出</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="路径-C：Inline-技能（默认）"><a href="#路径-C：Inline-技能（默认）" class="headerlink" title="路径 C：Inline 技能（默认）"></a>路径 C：Inline 技能（默认）</h3><p>触发条件：其余所有情况</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 调用 processPromptSlashCommand()</span></span><br><span class="line"><span class="comment">// → command.getPromptForCommand(args, context)</span></span><br><span class="line"><span class="comment">//   → 读取内存中已加载的 SKILL.md 内容</span></span><br><span class="line"><span class="comment">//   → 替换参数、变量</span></span><br><span class="line"><span class="comment">//   → 执行 shell: 字段命令（非 MCP 技能）</span></span><br><span class="line"><span class="comment">// 返回 newMessages（携带 toolUseID）+ contextModifier</span></span><br><span class="line"><span class="comment">//   contextModifier 会 patch: allowed-tools、model override、effort level</span></span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="遥测：was-discovered-字段"><a href="#遥测：was-discovered-字段" class="headerlink" title="遥测：was_discovered 字段"></a>遥测：was_discovered 字段</h2><p><code>was_discovered</code> 是技能发现系统最核心的<strong>转化率指标</strong>，追踪”被发现的技能”是否真正被调用。</p>
+<h3 id="Session-级追踪"><a href="#Session-级追踪" class="headerlink" title="Session 级追踪"></a>Session 级追踪</h3><p><code>src/screens/REPL.tsx</code> 第 1958–1963 行：</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 跨 ToolUseContext 重建持久存在，整个 Session 共享一个 Set</span></span><br><span class="line"><span class="keyword">const</span> discoveredSkillNamesRef = <span class="title function_">useRef</span>(<span class="keyword">new</span> <span class="title class_">Set</span>&lt;<span class="built_in">string</span>&gt;())</span><br></pre></td></tr></table></figure>
+
+<p><code>src/QueryEngine.ts</code> 第 192–197 行：</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// SDK 模式：每次 submitMessage 清空，防止跨 Turn 累积</span></span><br><span class="line"><span class="keyword">private</span> discoveredSkillNames = <span class="keyword">new</span> <span class="title class_">Set</span>&lt;<span class="built_in">string</span>&gt;()</span><br></pre></td></tr></table></figure>
+
+<p><code>src/utils/forkedAgent.ts</code> 第 385–386 行：</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 子 Agent 独立追踪</span></span><br><span class="line"><span class="attr">discoveredSkillNames</span>: <span class="keyword">new</span> <span class="title class_">Set</span>&lt;<span class="built_in">string</span>&gt;()</span><br></pre></td></tr></table></figure>
+
+<h3 id="遥测事件"><a href="#遥测事件" class="headerlink" title="遥测事件"></a>遥测事件</h3><p>事件名：<code>&#39;tengu_skill_tool_invocation&#39;</code></p>
+<p>完整字段列表：</p>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>command_name</code></td>
+<td>string</td>
+<td>脱敏名称（自定义技能统一显示为 <code>&#39;custom&#39;</code>）</td>
+</tr>
+<tr>
+<td><code>_PROTO_skill_name</code></td>
+<td>string</td>
+<td>未脱敏名称（PII 标记，路由到特权 BigQuery 列）</td>
+</tr>
+<tr>
+<td><code>execution_context</code></td>
+<td><code>&#39;inline&#39; | &#39;fork&#39; | &#39;remote&#39;</code></td>
+<td>执行路径</td>
+</tr>
+<tr>
+<td><code>invocation_trigger</code></td>
+<td><code>&#39;claude-proactive&#39; | &#39;nested-skill&#39;</code></td>
+<td>触发来源</td>
+</tr>
+<tr>
+<td><code>query_depth</code></td>
+<td>number</td>
+<td>嵌套深度</td>
+</tr>
+<tr>
+<td><code>was_discovered</code></td>
+<td>boolean</td>
+<td><strong>核心指标</strong>：是否经过发现系统</td>
+</tr>
+<tr>
+<td><code>is_remote</code></td>
+<td>boolean</td>
+<td>是否为远程技能</td>
+</tr>
+<tr>
+<td><code>remote_cache_hit</code></td>
+<td>boolean</td>
+<td>远程技能缓存命中（remote 路径专属）</td>
+</tr>
+<tr>
+<td><code>remote_load_latency_ms</code></td>
+<td>number</td>
+<td>远程加载延迟（remote 路径专属）</td>
+</tr>
+</tbody></table>
+<p><strong>特殊规则</strong>：远程技能固定设置 <code>was_discovered: true</code>（第 1047 行），注释解释：</p>
+<blockquote>
+<p>“Remote skills are always model-discovered (never in static skill_listing), so was_discovered is always true.”</p>
+</blockquote>
+<hr>
+<h2 id="完整调用流程图"><a href="#完整调用流程图" class="headerlink" title="完整调用流程图"></a>完整调用流程图</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br></pre></td><td class="code"><pre><span class="line">用户发送消息</span><br><span class="line">    │</span><br><span class="line">    ▼</span><br><span class="line">getAttachmentMessages()  [src/utils/attachments.ts]</span><br><span class="line">    │</span><br><span class="line">    ├─ [EXPERIMENTAL_SKILL_SEARCH &amp;&amp; !skipSkillDiscovery]</span><br><span class="line">    │   └─ getTurnZeroSkillDiscovery(input, messages, context)</span><br><span class="line">    │       ├─ 阻塞式 AKI 向量搜索 / 本地关键词匹配</span><br><span class="line">    │       └─ 返回 skill_discovery attachment</span><br><span class="line">    │           └─ discoveredSkillNames.add(skillName)</span><br><span class="line">    │</span><br><span class="line">    └─ skill_listing attachment（所有可用技能列表）</span><br><span class="line">        （启用搜索时仅包含 bundled+MCP，否则包含全部）</span><br><span class="line"></span><br><span class="line">    │</span><br><span class="line">    ▼</span><br><span class="line">query.ts 启动模型流式输出</span><br><span class="line">    │</span><br><span class="line">    ├─ startSkillDiscoveryPrefetch(...)   [异步，与流式输出并发]</span><br><span class="line">    │   └─ 仅在 write-pivot 轮次触发</span><br><span class="line">    │</span><br><span class="line">    └─ 模型接收到的上下文：</span><br><span class="line">        ├─ 系统提示：SkillTool 使用指南 + DiscoverSkillsTool 引导语</span><br><span class="line">        ├─ skill_listing: &quot;- skill-name: description\n...&quot;</span><br><span class="line">        └─ skill_discovery: &quot;Skills relevant to your task:\n- xxx: xxx&quot;</span><br><span class="line"></span><br><span class="line">    │</span><br><span class="line">    ▼</span><br><span class="line">模型决定调用 Skill(&quot;commit&quot;)</span><br><span class="line">    │</span><br><span class="line">    ▼</span><br><span class="line">SkillTool.validateInput()</span><br><span class="line">    ├─ _canonical_ 前缀？→ 查 remoteSkillState</span><br><span class="line">    └─ 否则 → findCommand() 查本地技能索引</span><br><span class="line"></span><br><span class="line">    │</span><br><span class="line">    ▼</span><br><span class="line">SkillTool.checkPermissions()</span><br><span class="line">    ├─ deny 规则？→ 拒绝</span><br><span class="line">    ├─ _canonical_ 前缀？→ 自动允许（Curated 技能）</span><br><span class="line">    ├─ allow 规则？→ 允许</span><br><span class="line">    ├─ skillHasOnlySafeProperties()？→ 自动允许</span><br><span class="line">    └─ 否则 → 询问用户</span><br><span class="line"></span><br><span class="line">    │</span><br><span class="line">    ▼</span><br><span class="line">SkillTool.call()  分发到三条路径：</span><br><span class="line">    │</span><br><span class="line">    ├─ [_canonical_ + ant] → executeRemoteSkill()</span><br><span class="line">    │   ├─ loadRemoteSkill(slug, url)  [GCS/AKI，带缓存]</span><br><span class="line">    │   ├─ 替换变量，注册 addInvokedSkill()</span><br><span class="line">    │   └─ 遥测: was_discovered=true, is_remote=true</span><br><span class="line">    │</span><br><span class="line">    ├─ [context: fork] → executeForkedSkill()</span><br><span class="line">    │   ├─ runAgent()  [隔离子 Agent]</span><br><span class="line">    │   └─ 遥测: execution_context=&#x27;fork&#x27;, was_discovered=?</span><br><span class="line">    │</span><br><span class="line">    └─ [默认 inline] → processPromptSlashCommand()</span><br><span class="line">        ├─ 展开 SKILL.md，替换参数和变量</span><br><span class="line">        ├─ 返回 newMessages + contextModifier</span><br><span class="line">        │   contextModifier: patch allowed-tools, model, effort</span><br><span class="line">        └─ 遥测: execution_context=&#x27;inline&#x27;, was_discovered=?</span><br><span class="line"></span><br><span class="line">    │</span><br><span class="line">    ▼</span><br><span class="line">工具执行完毕后：</span><br><span class="line">collectSkillDiscoveryPrefetch()  [收集异步 prefetch 结果]</span><br><span class="line">    └─ 注入 skill_discovery attachments 到下一轮对话</span><br><span class="line">        hidden_by_main_turn 指标：目标 &gt;98% 的情况下</span><br><span class="line">        prefetch 已在主轮次完成前解析完毕</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="关键源码位置速查表"><a href="#关键源码位置速查表" class="headerlink" title="关键源码位置速查表"></a>关键源码位置速查表</h2><table>
+<thead>
+<tr>
+<th>功能</th>
+<th>文件</th>
+<th>行号</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Feature Flag 门控（SkillTool）</td>
+<td><code>src/tools/SkillTool/SkillTool.ts</code></td>
+<td>108–115</td>
+</tr>
+<tr>
+<td>Feature Flag 门控（query）</td>
+<td><code>src/query.ts</code></td>
+<td>66–68</td>
+</tr>
+<tr>
+<td>Feature Flag 门控（attachments）</td>
+<td><code>src/utils/attachments.ts</code></td>
+<td>95–102</td>
+</tr>
+<tr>
+<td>Turn-0 发现调用</td>
+<td><code>src/utils/attachments.ts</code></td>
+<td>801–812</td>
+</tr>
+<tr>
+<td>异步 prefetch 启动</td>
+<td><code>src/query.ts</code></td>
+<td>331–335</td>
+</tr>
+<tr>
+<td>异步 prefetch 收集</td>
+<td><code>src/query.ts</code></td>
+<td>1617–1628</td>
+</tr>
+<tr>
+<td>skill_discovery attachment 类型定义</td>
+<td><code>src/utils/attachments.ts</code></td>
+<td>537–542</td>
+</tr>
+<tr>
+<td>skill_discovery → 模型消息转换</td>
+<td><code>src/utils/messages.ts</code></td>
+<td>3506–3519</td>
+</tr>
+<tr>
+<td>skill_discovery UI 渲染</td>
+<td><code>src/components/messages/AttachmentMessage.tsx</code></td>
+<td>108–122</td>
+</tr>
+<tr>
+<td>压缩前剥离 skill attachments</td>
+<td><code>src/services/compact/compact.ts</code></td>
+<td>211–223</td>
+</tr>
+<tr>
+<td>DiscoverSkillsTool 名称加载</td>
+<td><code>src/constants/prompts.ts</code></td>
+<td>86–91</td>
+</tr>
+<tr>
+<td>DiscoverSkillsTool 系统提示引导语</td>
+<td><code>src/constants/prompts.ts</code></td>
+<td>333–341</td>
+</tr>
+<tr>
+<td>SKILL.md 目录扫描</td>
+<td><code>src/skills/loadSkillsDir.ts</code></td>
+<td>638–803</td>
+</tr>
+<tr>
+<td>动态技能目录发现</td>
+<td><code>src/skills/loadSkillsDir.ts</code></td>
+<td>861–896</td>
+</tr>
+<tr>
+<td>Frontmatter 解析</td>
+<td><code>src/skills/loadSkillsDir.ts</code></td>
+<td>185–265</td>
+</tr>
+<tr>
+<td>变量替换（SKILL_DIR, SESSION_ID）</td>
+<td><code>src/skills/loadSkillsDir.ts</code></td>
+<td>359–369</td>
+</tr>
+<tr>
+<td>Remote 技能执行入口</td>
+<td><code>src/tools/SkillTool/SkillTool.ts</code></td>
+<td>605–613</td>
+</tr>
+<tr>
+<td>executeRemoteSkill 完整实现</td>
+<td><code>src/tools/SkillTool/SkillTool.ts</code></td>
+<td>969–1108</td>
+</tr>
+<tr>
+<td>was_discovered（inline 路径）</td>
+<td><code>src/tools/SkillTool/SkillTool.ts</code></td>
+<td>661–668</td>
+</tr>
+<tr>
+<td>was_discovered（fork 路径）</td>
+<td><code>src/tools/SkillTool/SkillTool.ts</code></td>
+<td>139–146</td>
+</tr>
+<tr>
+<td>was_discovered（remote 固定为 true）</td>
+<td><code>src/tools/SkillTool/SkillTool.ts</code></td>
+<td>1047</td>
+</tr>
+<tr>
+<td>discoveredSkillNames（REPL Session）</td>
+<td><code>src/screens/REPL.tsx</code></td>
+<td>1958–1963</td>
+</tr>
+<tr>
+<td>discoveredSkillNames（SDK）</td>
+<td><code>src/QueryEngine.ts</code></td>
+<td>192–197</td>
+</tr>
+<tr>
+<td>discoveredSkillNames（子 Agent）</td>
+<td><code>src/utils/forkedAgent.ts</code></td>
+<td>385–386</td>
+</tr>
+<tr>
+<td>discoveredSkillNames（ToolUseContext 定义）</td>
+<td><code>src/Tool.ts</code></td>
+<td>224–225</td>
+</tr>
+<tr>
+<td>SkillTool 工具描述</td>
+<td><code>src/tools/SkillTool/prompt.ts</code></td>
+<td>173–195</td>
+</tr>
+<tr>
+<td>SkillTool 工具名常量</td>
+<td><code>src/tools/SkillTool/constants.ts</code></td>
+<td>1</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><p>Claude Code 的技能发现系统是一个精心设计的<strong>三层渐进式架构</strong>：</p>
+<ol>
+<li><strong>被动发现（Turn-0）</strong>：每轮对话自动运行，阻塞式确保模型第一时间看到相关技能</li>
+<li><strong>主动搜索（DiscoverSkillsTool）</strong>：应对中途转向，已展示技能自动去重</li>
+<li><strong>远程技能（Canonical Skills）</strong>：Anthropic 策划的企业级技能库，必须先经发现再执行</li>
+</ol>
+<p>整个系统通过 <code>EXPERIMENTAL_SKILL_SEARCH</code> 编译期 Flag 完全隔离在外部构建之外，并通过 <code>was_discovered</code> 遥测字段持续度量”发现→调用”的转化率，驱动系统迭代优化。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://helsome.github.io">helson</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://helsome.github.io/2026/04/01/claude-code-skill-discovery/">https://helsome.github.io/2026/04/01/claude-code-skill-discovery/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://helsome.github.io" target="_blank">infinite</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/AI/">AI</a></div><div class="post-share"><div class="social-share" data-image="/img/butterfly-icon.png" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2026/04/01/claude-code-agent-team-analysis/" title="Claude Code Agent Team 架构分析：Multi-Agent 协作的范式跃迁"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">Claude Code Agent Team 架构分析：Multi-Agent 协作的范式跃迁</div></div><div class="info-2"><div class="info-item-1"> 本文梳理 Claude Code 新增的 Agent Team 功能的核心机制，并与既有 Sub-Agent 体系做结构性对比。目标读者：对 AI 工程架构感兴趣但不一定有编程背景的人。   背景Claude Code 的 Sub-Agent 能力已经相对成熟——给它一个任务，它会在独立进程中并行处理多个子任务，完成后把结果汇回主对话。这套机制在大多数场景下够用。 但有一类任务它处理得不好：子任务之间存在强依赖关系，或需要实时协商。比如你想让 AI 同时负责写文档和写测试，而测试必须基于最新的接口定义——这时候两个 Sub-Agent 的孤立执行就会出问题。它们各自为政，没有任何横向沟通通道。 Agent Team 就是针对这个问题设计的。  架构设计Agent Team 的核心抽象由四个组件构成： Main Agent（队长）：解析用户意图，拆解任务，创建并分配队友，最终汇总交付。 Team Members（队友）：每个队友在独立的上下文窗口中运行，持有自己的”大脑”。这意味着队友 A 写了什么，队友 B 不会自动感知——这是刻意的设计，目的是防止上下文污染。 Mailbox...</div></div></div></a><a class="pagination-related" href="/2026/04/01/feishu-to-claude-skill/" title="利用 Claude Code 抓取飞书知识库转换为 Skill 指南"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">利用 Claude Code 抓取飞书知识库转换为 Skill 指南</div></div><div class="info-2"><div class="info-item-1">这是什么把飞书 Wiki 里的技术文档（Bug 案例、SOP、流程指南等）拉下来，整理成 Claude Code 插件可以直接引用的内置知识库 Skill。 产出物：skills/&lt;name&gt;/SKILL.md + references/*.md，纯静态文件，运行时零 API 调用。  为什么用「双终端」模式 一句话：省钱。  制作一个知识库 Skill 的工作量大致分两类：    工作类型 举例 特点    动脑的 确定知识范围、设计 Skill 结构、写 SKILL.md 路由表、Review 产出质量 需要强推理，量少   动手的 遍历飞书文档树、逐篇 fetch、清理飞书特有标签、合并整理、控制体积 不需要强推理，量大   如果全程用 Opus（贵）干，大量 token 花在「读飞书文档 → 复制粘贴 → 清理格式」这种搬砖活上，很浪费。 所以我们拆成两个终端： 123456789┌─────────────────────────┐     提示词文件      ┌─────────────────────────┐│  终端 A: Plan Model  ...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2026/04/01/claude-code-agent-team-analysis/" title="Claude Code Agent Team 架构分析：Multi-Agent 协作的范式跃迁"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-04-01</div><div class="info-item-2">Claude Code Agent Team 架构分析：Multi-Agent 协作的范式跃迁</div></div><div class="info-2"><div class="info-item-1"> 本文梳理 Claude Code 新增的 Agent Team 功能的核心机制，并与既有 Sub-Agent 体系做结构性对比。目标读者：对 AI 工程架构感兴趣但不一定有编程背景的人。   背景Claude Code 的 Sub-Agent 能力已经相对成熟——给它一个任务，它会在独立进程中并行处理多个子任务，完成后把结果汇回主对话。这套机制在大多数场景下够用。 但有一类任务它处理得不好：子任务之间存在强依赖关系，或需要实时协商。比如你想让 AI 同时负责写文档和写测试，而测试必须基于最新的接口定义——这时候两个 Sub-Agent 的孤立执行就会出问题。它们各自为政，没有任何横向沟通通道。 Agent Team 就是针对这个问题设计的。  架构设计Agent Team 的核心抽象由四个组件构成： Main Agent（队长）：解析用户意图，拆解任务，创建并分配队友，最终汇总交付。 Team Members（队友）：每个队友在独立的上下文窗口中运行，持有自己的”大脑”。这意味着队友 A 写了什么，队友 B 不会自动感知——这是刻意的设计，目的是防止上下文污染。 Mailbox...</div></div></div></a><a class="pagination-related" href="/2026/04/01/feishu-to-claude-skill/" title="利用 Claude Code 抓取飞书知识库转换为 Skill 指南"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-04-01</div><div class="info-item-2">利用 Claude Code 抓取飞书知识库转换为 Skill 指南</div></div><div class="info-2"><div class="info-item-1">这是什么把飞书 Wiki 里的技术文档（Bug 案例、SOP、流程指南等）拉下来，整理成 Claude Code 插件可以直接引用的内置知识库 Skill。 产出物：skills/&lt;name&gt;/SKILL.md + references/*.md，纯静态文件，运行时零 API 调用。  为什么用「双终端」模式 一句话：省钱。  制作一个知识库 Skill 的工作量大致分两类：    工作类型 举例 特点    动脑的 确定知识范围、设计 Skill 结构、写 SKILL.md 路由表、Review 产出质量 需要强推理，量少   动手的 遍历飞书文档树、逐篇 fetch、清理飞书特有标签、合并整理、控制体积 不需要强推理，量大   如果全程用 Opus（贵）干，大量 token 花在「读飞书文档 → 复制粘贴 → 清理格式」这种搬砖活上，很浪费。 所以我们拆成两个终端： 123456789┌─────────────────────────┐     提示词文件      ┌─────────────────────────┐│  终端 A: Plan Model  ...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/butterfly-icon.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">helson</div><div class="author-info-description">吾生有涯，其知无涯</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">15</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">10</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">0</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/helsome"><i class="fab fa-github"></i><span>GitHub</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/helsome" target="_blank" title="Github"><i class="fab fa-github" style="color: #2A2218;"></i></a></div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%9B%AE%E5%BD%95"><span class="toc-number">1.</span> <span class="toc-text">目录</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%B3%BB%E7%BB%9F%E6%A6%82%E8%A7%88"><span class="toc-number">2.</span> <span class="toc-text">系统概览</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Feature-Flag-%E9%97%A8%E6%8E%A7%E6%9C%BA%E5%88%B6"><span class="toc-number">3.</span> <span class="toc-text">Feature Flag 门控机制</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E5%B1%82%E5%8F%91%E7%8E%B0%E6%9E%B6%E6%9E%84"><span class="toc-number">4.</span> <span class="toc-text">三层发现架构</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B1%82%E4%B8%80%EF%BC%9ATurn-0-%E8%87%AA%E5%8A%A8%E5%8F%91%E7%8E%B0"><span class="toc-number">4.1.</span> <span class="toc-text">层一：Turn-0 自动发现</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B1%82%E4%BA%8C%EF%BC%9A%E4%B8%BB%E5%8A%A8%E6%90%9C%E7%B4%A2%E5%B7%A5%E5%85%B7-DiscoverSkillsTool"><span class="toc-number">4.2.</span> <span class="toc-text">层二：主动搜索工具 DiscoverSkillsTool</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B1%82%E4%B8%89%EF%BC%9A%E8%BF%9C%E7%A8%8B%E6%8A%80%E8%83%BD%E7%B3%BB%E7%BB%9F"><span class="toc-number">4.3.</span> <span class="toc-text">层三：远程技能系统</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#skill-discovery-Attachment-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84"><span class="toc-number">5.</span> <span class="toc-text">skill_discovery Attachment 数据结构</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#SKILL-md-%E6%89%AB%E6%8F%8F%E4%B8%8E%E6%9C%AC%E5%9C%B0%E5%8A%A0%E8%BD%BD"><span class="toc-number">6.</span> <span class="toc-text">SKILL.md 扫描与本地加载</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%9B%AE%E5%BD%95%E6%89%AB%E6%8F%8F%E9%A1%BA%E5%BA%8F"><span class="toc-number">6.1.</span> <span class="toc-text">目录扫描顺序</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%96%87%E4%BB%B6%E7%BB%93%E6%9E%84%E8%A6%81%E6%B1%82"><span class="toc-number">6.2.</span> <span class="toc-text">文件结构要求</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Frontmatter-%E5%AD%97%E6%AE%B5"><span class="toc-number">6.3.</span> <span class="toc-text">Frontmatter 字段</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8F%98%E9%87%8F%E6%9B%BF%E6%8D%A2"><span class="toc-number">6.4.</span> <span class="toc-text">变量替换</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8A%A8%E6%80%81%E5%8F%91%E7%8E%B0"><span class="toc-number">6.5.</span> <span class="toc-text">动态发现</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#SkillTool-%E4%B8%89%E6%9D%A1%E6%89%A7%E8%A1%8C%E8%B7%AF%E5%BE%84"><span class="toc-number">7.</span> <span class="toc-text">SkillTool 三条执行路径</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%B7%AF%E5%BE%84-A%EF%BC%9A%E8%BF%9C%E7%A8%8B-Canonical-%E6%8A%80%E8%83%BD%EF%BC%88ant-%E4%B8%93%E5%B1%9E%EF%BC%89"><span class="toc-number">7.1.</span> <span class="toc-text">路径 A：远程 Canonical 技能（ant 专属）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%B7%AF%E5%BE%84-B%EF%BC%9AFork-%E5%AD%90-Agent-%E6%8A%80%E8%83%BD"><span class="toc-number">7.2.</span> <span class="toc-text">路径 B：Fork 子 Agent 技能</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%B7%AF%E5%BE%84-C%EF%BC%9AInline-%E6%8A%80%E8%83%BD%EF%BC%88%E9%BB%98%E8%AE%A4%EF%BC%89"><span class="toc-number">7.3.</span> <span class="toc-text">路径 C：Inline 技能（默认）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%81%A5%E6%B5%8B%EF%BC%9Awas-discovered-%E5%AD%97%E6%AE%B5"><span class="toc-number">8.</span> <span class="toc-text">遥测：was_discovered 字段</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Session-%E7%BA%A7%E8%BF%BD%E8%B8%AA"><span class="toc-number">8.1.</span> <span class="toc-text">Session 级追踪</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%81%A5%E6%B5%8B%E4%BA%8B%E4%BB%B6"><span class="toc-number">8.2.</span> <span class="toc-text">遥测事件</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%8C%E6%95%B4%E8%B0%83%E7%94%A8%E6%B5%81%E7%A8%8B%E5%9B%BE"><span class="toc-number">9.</span> <span class="toc-text">完整调用流程图</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%B3%E9%94%AE%E6%BA%90%E7%A0%81%E4%BD%8D%E7%BD%AE%E9%80%9F%E6%9F%A5%E8%A1%A8"><span class="toc-number">10.</span> <span class="toc-text">关键源码位置速查表</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%B0%8F%E7%BB%93"><span class="toc-number">11.</span> <span class="toc-text">小结</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/04/01/claude-code-agent-team-analysis/" title="Claude Code Agent Team 架构分析：Multi-Agent 协作的范式跃迁">Claude Code Agent Team 架构分析：Multi-Agent 协作的范式跃迁</a><time datetime="2026-04-01T04:00:00.000Z" title="发表于 2026-04-01 12:00:00">2026-04-01</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/04/01/feishu-to-claude-skill/" title="利用 Claude Code 抓取飞书知识库转换为 Skill 指南">利用 Claude Code 抓取飞书知识库转换为 Skill 指南</a><time datetime="2026-03-31T16:00:00.000Z" title="发表于 2026-04-01 00:00:00">2026-04-01</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/04/01/claude-code-skill-discovery/" title="Claude Code 技能发现机制深度解析">Claude Code 技能发现机制深度解析</a><time datetime="2026-03-31T16:00:00.000Z" title="发表于 2026-04-01 00:00:00">2026-04-01</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/10/25/brute-ratel-C4-badger%E5%85%A8%E5%88%86%E6%9E%90%E6%96%87%E6%A1%A3/" title="brute ratel C4 badger全分析文档">brute ratel C4 badger全分析文档</a><time datetime="2024-10-25T11:37:08.000Z" title="发表于 2024-10-25 19:37:08">2024-10-25</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/10/25/PE%E8%A7%A3%E6%9E%90%E5%99%A8%E7%BC%96%E5%86%99/" title="PE解析器编写">PE解析器编写</a><time datetime="2024-10-25T11:29:28.000Z" title="发表于 2024-10-25 19:29:28">2024-10-25</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2025 - 2026 By helson</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.1</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.4</a></span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.4"></script><script src="/js/main.js?v=5.5.4"></script><div class="js-pjax"></div><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>

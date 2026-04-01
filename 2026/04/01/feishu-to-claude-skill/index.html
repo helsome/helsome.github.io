@@ -1,0 +1,352 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>利用 Claude Code 抓取飞书知识库转换为 Skill 指南 | infinite</title><meta name="author" content="helson"><meta name="copyright" content="helson"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="F8F5EF"><meta name="description" content="这是什么把飞书 Wiki 里的技术文档（Bug 案例、SOP、流程指南等）拉下来，整理成 Claude Code 插件可以直接引用的内置知识库 Skill。 产出物：skills&#x2F;&lt;name&gt;&#x2F;SKILL.md + references&#x2F;*.md，纯静态文件，运行时零 API 调用。  为什么用「双终端」模式 一句话：省钱。  制作一个知识库 Skill 的工作量大致分两类：    工">
+<meta property="og:type" content="article">
+<meta property="og:title" content="利用 Claude Code 抓取飞书知识库转换为 Skill 指南">
+<meta property="og:url" content="https://helsome.github.io/2026/04/01/feishu-to-claude-skill/index.html">
+<meta property="og:site_name" content="infinite">
+<meta property="og:description" content="这是什么把飞书 Wiki 里的技术文档（Bug 案例、SOP、流程指南等）拉下来，整理成 Claude Code 插件可以直接引用的内置知识库 Skill。 产出物：skills&#x2F;&lt;name&gt;&#x2F;SKILL.md + references&#x2F;*.md，纯静态文件，运行时零 API 调用。  为什么用「双终端」模式 一句话：省钱。  制作一个知识库 Skill 的工作量大致分两类：    工">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://helsome.github.io/img/butterfly-icon.png">
+<meta property="article:published_time" content="2026-03-31T16:00:00.000Z">
+<meta property="article:modified_time" content="2026-04-01T05:55:24.361Z">
+<meta property="article:author" content="helson">
+<meta property="article:tag" content="AI">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://helsome.github.io/img/butterfly-icon.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "利用 Claude Code 抓取飞书知识库转换为 Skill 指南",
+  "url": "https://helsome.github.io/2026/04/01/feishu-to-claude-skill/",
+  "image": "https://helsome.github.io/img/butterfly-icon.png",
+  "datePublished": "2026-03-31T16:00:00.000Z",
+  "dateModified": "2026-04-01T05:55:24.361Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "helson",
+      "url": "https://helsome.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://helsome.github.io/2026/04/01/feishu-to-claude-skill/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//fonts.googleapis.com" crossorigin=""/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.4"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', 'F8F5EF')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&amp;display=swap" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.13.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '利用 Claude Code 抓取飞书知识库转换为 Skill 指南',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="/css/custom.css"><meta name="generator" content="Hexo 8.1.1"></head><body><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">infinite</span></a><a class="nav-page-title" href="/"><span class="site-name">利用 Claude Code 抓取飞书知识库转换为 Skill 指南</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">利用 Claude Code 抓取飞书知识库转换为 Skill 指南</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-03-31T16:00:00.000Z" title="发表于 2026-04-01 00:00:00">2026-04-01</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-04-01T05:55:24.361Z" title="更新于 2026-04-01 13:55:24">2026-04-01</time></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div><article class="container post-content" id="article-container"><h2 id="这是什么"><a href="#这是什么" class="headerlink" title="这是什么"></a>这是什么</h2><p>把飞书 Wiki 里的技术文档（Bug 案例、SOP、流程指南等）拉下来，整理成 Claude Code 插件可以直接引用的内置知识库 Skill。</p>
+<p><strong>产出物</strong>：<code>skills/&lt;name&gt;/SKILL.md</code> + <code>references/*.md</code>，纯静态文件，运行时零 API 调用。</p>
+<hr>
+<h2 id="为什么用「双终端」模式"><a href="#为什么用「双终端」模式" class="headerlink" title="为什么用「双终端」模式"></a>为什么用「双终端」模式</h2><blockquote>
+<p>一句话：省钱。</p>
+</blockquote>
+<p>制作一个知识库 Skill 的工作量大致分两类：</p>
+<table>
+<thead>
+<tr>
+<th>工作类型</th>
+<th>举例</th>
+<th>特点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>动脑的</strong></td>
+<td>确定知识范围、设计 Skill 结构、写 SKILL.md 路由表、Review 产出质量</td>
+<td>需要强推理，量少</td>
+</tr>
+<tr>
+<td><strong>动手的</strong></td>
+<td>遍历飞书文档树、逐篇 fetch、清理飞书特有标签、合并整理、控制体积</td>
+<td>不需要强推理，量大</td>
+</tr>
+</tbody></table>
+<p>如果全程用 Opus（贵）干，大量 token 花在「读飞书文档 → 复制粘贴 → 清理格式」这种搬砖活上，很浪费。</p>
+<p><strong>所以我们拆成两个终端</strong>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">┌─────────────────────────┐     提示词文件      ┌─────────────────────────┐</span><br><span class="line">│  终端 A: Plan Model     │ ──────────────────→ │  终端 B: Worker Model   │</span><br><span class="line">│  (Opus / 贵模型)        │                     │  (Sonnet/Haiku / 便宜)  │</span><br><span class="line">│                         │ ←────────────────── │                         │</span><br><span class="line">│  · 确定知识范围         │   references/*.md   │  · 读提示词             │</span><br><span class="line">│  · 写提示词指导抓取     │                     │  · 调飞书 MCP 拉文档    │</span><br><span class="line">│  · Review 整理结果      │                     │  · 清理格式、去冗余     │</span><br><span class="line">│  · 写 SKILL.md          │                     │  · 合并输出参考文件     │</span><br><span class="line">└─────────────────────────┘                     └─────────────────────────┘</span><br></pre></td></tr></table></figure>
+
+<p>实测下来，WiFi 知识库（4 篇飞书文档 → 5 个参考文件，共 ~44KB）的搬砖工作用 Sonnet 跑，成本大约是纯 Opus 的 <strong>1&#x2F;5</strong>。Plan Model 只在开头（写提示词）和结尾（Review + 写 SKILL.md）消耗 token。</p>
+<hr>
+<h2 id="前置条件"><a href="#前置条件" class="headerlink" title="前置条件"></a>前置条件</h2><h3 id="飞书-MCP"><a href="#飞书-MCP" class="headerlink" title="飞书 MCP"></a>飞书 MCP</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 添加飞书 MCP（用户级，所有项目可用）</span></span><br><span class="line">claude mcp add --transport http feishu-mcp --scope user \</span><br><span class="line">  https://mcp.feishu.cn/mcp/&lt;your-mcp-token&gt;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 验证</span></span><br><span class="line">claude mcp get feishu-mcp</span><br></pre></td></tr></table></figure>
+
+<h3 id="两个终端"><a href="#两个终端" class="headerlink" title="两个终端"></a>两个终端</h3><ul>
+<li><strong>终端 A</strong>：你日常用的 Claude Code 窗口，跑贵模型（Opus）</li>
+<li><strong>终端 B</strong>：另开一个 Claude Code 窗口，指定便宜模型（<code>claude --model sonnet</code> 或通过 API 中转的更便宜模型）</li>
+</ul>
+<hr>
+<h2 id="完整流程"><a href="#完整流程" class="headerlink" title="完整流程"></a>完整流程</h2><hr>
+<h2 id="Step-1：确定知识范围（终端-A）"><a href="#Step-1：确定知识范围（终端-A）" class="headerlink" title="Step 1：确定知识范围（终端 A）"></a>Step 1：确定知识范围（终端 A）</h2><p>在终端 A 里，先跟 Plan Model 对齐要做什么。你需要明确：</p>
+<ul>
+<li><strong>领域</strong>：WiFi &#x2F; Camera &#x2F; Audio &#x2F; 蓝牙 …</li>
+<li><strong>飞书入口</strong>：Wiki 空间 URL 或几篇核心文档的链接</li>
+<li><strong>预期产出</strong>：几个参考文件、分别覆盖什么内容</li>
+<li><strong>体积预算</strong>：单文件建议不超过 20KB（Context Window 有限）</li>
+</ul>
+<p>示例对话：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">你: 我想把 WiFi 团队的飞书知识库做成一个 skill，</span><br><span class="line">    入口是这几篇文档：</span><br><span class="line">    - WiFi 日志分析 agent 2.0 提示词</span><br><span class="line">    - WLAN 连接问题百科全书</span><br><span class="line">    - WiFi RootCause 文档树（下面有 25 个子文档）</span><br><span class="line">    - WiFi SOP 汇总</span><br><span class="line"></span><br><span class="line">Plan Model: 好的，我建议整理为 4 个参考文件：</span><br><span class="line">    1. log-analysis-guide.md — 日志关键字和分析流程</span><br><span class="line">    2. connection-flow.md — 连接链路全解</span><br><span class="line">    3. rootcause-cases.md — 历史案例合集</span><br><span class="line">    4. sop-reference.md — SOP 索引</span><br><span class="line">    我来写一个提示词文件，你拿去给 Worker 跑。</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="Step-2：写抓取提示词（终端-A）"><a href="#Step-2：写抓取提示词（终端-A）" class="headerlink" title="Step 2：写抓取提示词（终端 A）"></a>Step 2：写抓取提示词（终端 A）</h2><p>Plan Model 生成一个提示词文件（比如 <code>feishu-kb-fetch-prompt.md</code>），指导 Worker Model 做什么。</p>
+<blockquote>
+<p><strong>提示词文件是两个终端之间的「接口契约」。</strong> 写得越清晰，Worker 越不容易跑偏，你 Review 的工作量就越少。</p>
+</blockquote>
+<p>提示词文件应该包含：</p>
+<h3 id="2-1-任务说明"><a href="#2-1-任务说明" class="headerlink" title="2.1 任务说明"></a>2.1 任务说明</h3><p>告诉 Worker 它要做什么、产出物是什么。</p>
+<h3 id="2-2-飞书文档清单"><a href="#2-2-飞书文档清单" class="headerlink" title="2.2 飞书文档清单"></a>2.2 飞书文档清单</h3><p>列出每篇要抓取的文档 URL，说明各自对应哪个参考文件。</p>
+<figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">| 飞书文档 URL | 输出文件 | 整理要求 |</span><br><span class="line">|-------------|---------|---------|</span><br><span class="line">| https://xxx.feishu.cn/wiki/xxx | references/log-analysis-guide.md | 保留所有关键字和 regex，去掉个人笔记 |</span><br><span class="line">| https://xxx.feishu.cn/wiki/yyy | references/connection-flow.md | 保留日志示例和 status code 表 |</span><br><span class="line">| https://xxx.feishu.cn/wiki/zzz (有子文档) | references/rootcause-cases.md | 遍历所有子文档，每个案例提取: 平台/现象/RootCause/关键日志/解决方案 |</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-3-格式规范"><a href="#2-3-格式规范" class="headerlink" title="2.3 格式规范"></a>2.3 格式规范</h3><figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">## 参考文件格式要求</span></span><br><span class="line"></span><br><span class="line">每个文件头部必须有:</span><br><span class="line"><span class="section"># 标题</span></span><br><span class="line"><span class="section">&gt; 来源: 飞书文档「XXX」，最后更新 YYYY-MM-DD</span></span><br><span class="line"><span class="section">---</span></span><br><span class="line"></span><br><span class="line">清理规则:</span><br><span class="line"><span class="bullet">-</span> 删除飞书特有标签（whiteboard、mention-user、reminder 等）</span><br><span class="line"><span class="bullet">-</span> 图片标签替换为 [图片: 描述]</span><br><span class="line"><span class="bullet">-</span> 保留代码块、表格、列表</span><br><span class="line"><span class="bullet">-</span> 单个文件不超过 20KB，超出时精简低价值内容</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-4-输出位置"><a href="#2-4-输出位置" class="headerlink" title="2.4 输出位置"></a>2.4 输出位置</h3><figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">所有文件写入:</span><br><span class="line">/path/to/plugin/skills/<span class="language-xml"><span class="tag">&lt;<span class="name">name</span>&gt;</span></span>/references/</span><br><span class="line"></span><br><span class="line">完成后告诉我每个文件的:</span><br><span class="line"><span class="bullet">-</span> 文件名和大小</span><br><span class="line"><span class="bullet">-</span> 包含几个章节/案例</span><br><span class="line"><span class="bullet">-</span> 是否有需要人工确认的内容（如看不懂的飞书标签）</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="Step-3：Worker-抓取和整理（终端-B）"><a href="#Step-3：Worker-抓取和整理（终端-B）" class="headerlink" title="Step 3：Worker 抓取和整理（终端 B）"></a>Step 3：Worker 抓取和整理（终端 B）</h2><p>在终端 B 启动便宜模型，把提示词文件喂给它：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 终端 B</span></span><br><span class="line">claude --model sonnet</span><br><span class="line"></span><br><span class="line"><span class="comment"># 进入对话后</span></span><br><span class="line">你: 阅读 /path/to/feishu-kb-fetch-prompt.md，按照里面的要求执行</span><br></pre></td></tr></table></figure>
+
+<p>Worker Model 会：</p>
+<ol>
+<li>读取提示词文件</li>
+<li>调用飞书 MCP 的 <code>list-docs</code> 遍历文档树</li>
+<li>逐篇调用 <code>fetch-doc</code> 拉取内容</li>
+<li>按规范清理格式、去冗余</li>
+<li>合并写入 <code>references/*.md</code></li>
+<li>输出完成报告</li>
+</ol>
+<blockquote>
+<p><strong>Worker 遇到的典型问题：</strong> 飞书大文档可能需要分页 fetch（用 offset + limit 参数）；Wiki 子文档需要先 list-docs 拿到子节点再逐个 fetch；飞书 Markdown 中的 whiteboard 标签需要用 fetch-file 单独获取内容或直接删除。这些都应该在提示词里预先说明。</p>
+</blockquote>
+<h3 id="Worker-完成后的典型输出"><a href="#Worker-完成后的典型输出" class="headerlink" title="Worker 完成后的典型输出"></a>Worker 完成后的典型输出</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">完成！已生成以下参考文件：</span><br><span class="line"></span><br><span class="line">| 文件 | 大小 | 内容概要 |</span><br><span class="line">|------|------|---------|</span><br><span class="line">| references/log-analysis-guide.md | 8.7KB | 7 类问题关键字，共 42 个 regex 模式 |</span><br><span class="line">| references/connection-flow.md | 12KB | 连接全流程 + 高通/MTK 日志对照 + 2 张 status code 表 |</span><br><span class="line">| references/rootcause-cases.md | 20KB | 25 个案例（LocalOnly 4 / Internet 18 / Stability 3）|</span><br><span class="line">| references/sop-reference.md | 2.9KB | 7 个热点 SOP + 2 个分析路径 |</span><br><span class="line"></span><br><span class="line">需要确认：</span><br><span class="line">- rootcause-cases.md 中案例 16 的飞书文档有 51KB，已精简到核心信息</span><br><span class="line">- connection-flow.md 中有 2 处 whiteboard 图表已删除，用文字描述替代</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="Step-4：Review-参考文件（终端-A）"><a href="#Step-4：Review-参考文件（终端-A）" class="headerlink" title="Step 4：Review 参考文件（终端 A）"></a>Step 4：Review 参考文件（终端 A）</h2><p>回到终端 A，让 Plan Model 检查 Worker 的产出：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">你: 帮我 review 一下 skills/wifi-knowledge/references/ 下面的 4 个文件，</span><br><span class="line">    检查：内容完整性、格式规范、有没有残留的飞书标签、体积是否合理</span><br></pre></td></tr></table></figure>
+
+<p>Plan Model 会逐个读取文件并给出反馈。如果有问题，修改提示词让 Worker 重跑，或者 Plan Model 直接小幅修正。</p>
+<hr>
+<h2 id="Step-5：写-SKILL-md（终端-A）"><a href="#Step-5：写-SKILL-md（终端-A）" class="headerlink" title="Step 5：写 SKILL.md（终端 A）"></a>Step 5：写 SKILL.md（终端 A）</h2><p>参考文件确认无误后，让 Plan Model 基于这些内容创建 <code>SKILL.md</code>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">你: 参考文件都没问题了。现在帮我写 SKILL.md，要求：</span><br><span class="line">    1. YAML frontmatter 的 description 要包含具体触发关键词</span><br><span class="line">    2. 做一个问题分类路由表，映射到各个参考文件的具体章节</span><br><span class="line">    3. 加参考文件索引、使用流程说明、输出格式模板</span><br></pre></td></tr></table></figure>
+
+<h3 id="SKILL-md-的关键部分"><a href="#SKILL-md-的关键部分" class="headerlink" title="SKILL.md 的关键部分"></a>SKILL.md 的关键部分</h3><p><strong>YAML Frontmatter</strong>（决定 Progressive Disclosure 是否正确触发）：</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">---</span></span><br><span class="line"><span class="attr">name:</span> <span class="string">wifi-knowledge</span></span><br><span class="line"><span class="attr">description:</span> <span class="string">Use</span> <span class="string">when</span> <span class="string">analyzing</span> <span class="string">WiFi/WLAN</span> <span class="string">related</span> <span class="string">issues</span> <span class="string">—</span> <span class="string">connection</span> <span class="string">failures,</span></span><br><span class="line">  <span class="string">disconnections,</span> <span class="string">slow</span> <span class="string">speed,</span> <span class="string">roaming</span> <span class="string">problems,</span> <span class="string">hotspot</span> <span class="string">issues,</span> <span class="string">driver</span> <span class="string">crashes,</span></span><br><span class="line">  <span class="string">or</span> <span class="string">any</span> <span class="string">wireless</span> <span class="string">networking</span> <span class="string">bug.</span> <span class="string">Provides</span> <span class="string">built-in</span> <span class="string">diagnostic</span> <span class="string">knowledge</span> <span class="string">including</span></span><br><span class="line">  <span class="string">log</span> <span class="string">keyword</span> <span class="string">patterns,</span> <span class="string">connection</span> <span class="string">flow</span> <span class="string">analysis,</span> <span class="string">historical</span> <span class="string">root</span> <span class="string">cause</span> <span class="string">cases,</span></span><br><span class="line">  <span class="string">and</span> <span class="string">SOP</span> <span class="string">references.</span></span><br><span class="line"><span class="meta">---</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>注意：</strong> description 必须包含具体的触发关键词（WiFi、connection failures、roaming 等），不要写泛泛的「搜索知识库」。这个字段直接决定 Claude Code 在什么时候自动加载你的 Skill。</p>
+</blockquote>
+<p><strong>问题分类路由表</strong>（告诉 Agent 遇到什么关键词去读哪个文件）：</p>
+<figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">| 分类 | 触发关键词 | 主参考文件 | 章节 |</span><br><span class="line">|------|-----------|-----------|------|</span><br><span class="line">| 连接/断连类 | 连不上、断连、DHCP | connection-flow.md | 全文 |</span><br><span class="line">| 热点(SAP)类 | 热点打不开、SoftAp | sop-reference.md | 热点 SOP |</span><br><span class="line">| 稳定性类 | crash、ANR、SSR | rootcause-cases.md | Stability |</span><br><span class="line">| ... | ... | ... | ... |</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="实际案例：wifi-knowledge"><a href="#实际案例：wifi-knowledge" class="headerlink" title="实际案例：wifi-knowledge"></a>实际案例：wifi-knowledge</h2><p>用这个模式做的一个知识库 Skill，完整产出：</p>
+<table>
+<thead>
+<tr>
+<th>文件</th>
+<th>说明</th>
+<th>大小</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>skills/wifi-knowledge/SKILL.md</code></td>
+<td>Skill 定义：路由表 + 索引 + 流程 + 输出格式</td>
+<td>~4K</td>
+</tr>
+<tr>
+<td><code>references/log-analysis-guide.md</code></td>
+<td>7 类问题的日志关键字 + regex + 示例</td>
+<td>8.7K</td>
+</tr>
+<tr>
+<td><code>references/connection-flow.md</code></td>
+<td>连接链路全解 + 高通&#x2F;MTK 日志 + Status Code 表</td>
+<td>12K</td>
+</tr>
+<tr>
+<td><code>references/rootcause-cases.md</code></td>
+<td>25 个历史案例（含快速索引）</td>
+<td>20K</td>
+</tr>
+<tr>
+<td><code>references/sop-reference.md</code></td>
+<td>热点 SOP 汇总 + 分析路径</td>
+<td>2.9K</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="成本对比"><a href="#成本对比" class="headerlink" title="成本对比"></a>成本对比</h2><p>以 wifi-knowledge 为例（4 篇飞书文档，25 个子文档，总输出 ~44KB）：</p>
+<table>
+<thead>
+<tr>
+<th>方案</th>
+<th>模型</th>
+<th>预估 token 消耗</th>
+<th>相对成本</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>全程 Opus</td>
+<td>Opus 干所有活</td>
+<td>~200K（大量花在 fetch + 清理）</td>
+<td><strong>1x</strong></td>
+</tr>
+<tr>
+<td>双终端</td>
+<td>Opus 写提示词 + Review + SKILL.md ≈ 40K</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>—</td>
+<td>Sonnet 抓取 + 整理 ≈ 160K</td>
+<td>—</td>
+<td><strong>~0.3x</strong></td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>Sonnet 的 token 单价大约是 Opus 的 1&#x2F;5 ~ 1&#x2F;8。160K token 的搬砖活从 Opus 换到 Sonnet，省的钱够跑好几轮分析了。</p>
+</blockquote>
+<hr>
+<h2 id="设计要点"><a href="#设计要点" class="headerlink" title="设计要点"></a>设计要点</h2><p><strong>做：</strong></p>
+<ul>
+<li>description 写具体触发关键词</li>
+<li>参考文件控制在 20KB 以内</li>
+<li>提示词文件写清楚格式要求</li>
+<li>注明数据来源和更新时间</li>
+<li>Worker 完成后一定要 Review</li>
+</ul>
+<p><strong>不做：</strong></p>
+<ul>
+<li>不让 Opus 干搬砖活</li>
+<li>不把飞书文档原样复制（清理 + 精简）</li>
+<li>不让 description 和其他 Skill 冲突</li>
+<li>不超过单文件 20KB 限制</li>
+<li>不信任 Worker 的输出不检查</li>
+</ul>
+<hr>
+<h2 id="常见问题"><a href="#常见问题" class="headerlink" title="常见问题"></a>常见问题</h2><h3 id="Q-Worker-抓飞书文档报错怎么办？"><a href="#Q-Worker-抓飞书文档报错怎么办？" class="headerlink" title="Q: Worker 抓飞书文档报错怎么办？"></a>Q: Worker 抓飞书文档报错怎么办？</h3><p>飞书 MCP 的 <code>fetch-doc</code> 对超大文档可能需要分页。在提示词里加一句：「如果文档内容被截断（返回的 total_length &gt; length），用 offset 参数分页获取」。</p>
+<h3 id="Q-飞书文档里有图表-画板怎么处理？"><a href="#Q-飞书文档里有图表-画板怎么处理？" class="headerlink" title="Q: 飞书文档里有图表&#x2F;画板怎么处理？"></a>Q: 飞书文档里有图表&#x2F;画板怎么处理？</h3><p><code>&lt;whiteboard&gt;</code> 标签无法转为文本。两种处理：用 <code>fetch-file</code> 工具获取画板图片看一眼内容，然后用文字描述替代；或者直接删除，在参考文件里标注「原文此处有流程图，请查阅飞书原文」。</p>
+<h3 id="Q-如何更新知识库？"><a href="#Q-如何更新知识库？" class="headerlink" title="Q: 如何更新知识库？"></a>Q: 如何更新知识库？</h3><p>飞书文档更新后，重新让 Worker 跑一遍抓取提示词，覆盖 references 目录即可。SKILL.md 一般不需要改（除非新增了问题分类）。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://helsome.github.io">helson</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://helsome.github.io/2026/04/01/feishu-to-claude-skill/">https://helsome.github.io/2026/04/01/feishu-to-claude-skill/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://helsome.github.io" target="_blank">infinite</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/AI/">AI</a></div><div class="post-share"><div class="social-share" data-image="/img/butterfly-icon.png" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2026/04/01/claude-code-skill-discovery/" title="Claude Code 技能发现机制深度解析"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">Claude Code 技能发现机制深度解析</div></div><div class="info-2"><div class="info-item-1"> 基于源码逆向分析，详解 EXPERIMENTAL_SKILL_SEARCH 特性标志控制下的完整技能发现与加载系统。   目录 系统概览 Feature Flag 门控机制 三层发现架构 层一：Turn-0 自动发现 层二：主动搜索工具 DiscoverSkillsTool 层三：远程技能系统   skill_discovery Attachment 数据结构 SKILL.md 扫描与本地加载 SkillTool 三条执行路径 遥测：was_discovered 字段 完整调用流程图 关键源码位置速查表   系统概览Claude Code 的技能发现系统是一个独立于 Proactive 模式的子系统，普通对话模式同样可用。整个系统由编译期 Feature Flag EXPERIMENTAL_SKILL_SEARCH 控制：  外部构建（npm 包）：Flag 为 false，相关代码在打包阶段被死代码消除（DCE），连 &#39;skill_discovery&#39; 字符串字面量都不会出现在产物中。 Anthropic 内部构建：Flag 为 true，完整系统生效。部分功...</div></div></div></a><a class="pagination-related" href="/2024/10/25/brute-ratel-C4-badger%E5%85%A8%E5%88%86%E6%9E%90%E6%96%87%E6%A1%A3/" title="brute ratel C4 badger全分析文档"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">brute ratel C4 badger全分析文档</div></div><div class="info-2"><div class="info-item-1">Brute Ratel C4是一款类似于Cobalt Strike的商业红队武器框架，每年License收费为2500美元，客户需要提供企业电子邮件地址并在颁发许可证之前进行验证，首个版本Brute Ratel C4 v0.2于2021年2月9日发布，它是由Mandiant和CrowdStrike的前红队队员Chetan Nayak创建的，该工具独特之处在于它专门设计防止端点检测和响应(EDR)和防病毒(AV)软件的检测 ，是一款新型的红队商业对抗性攻击模拟武器。**AV（Antivirus）：主要依赖于特征库来检测计算机病毒，杀毒的能力完全取决于其拥有的特征库的更新程度。EDR（Endpoint Detection and Response）：是一种网络安全解决方案，专注于监控、检测和响应计算机端点（如桌面计算机、笔记本电脑、服务器等）上的潜在威胁和恶意活动。EDR系统通过收集和分析端点数据来发现异常行为、潜在攻击和漏洞利用。 与Cobalt Strike的Beacon后门类似，Brute Ratel C4允许红队在远程终端主机上部署Badger后门程序，Badger连接回攻击...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2026/04/01/claude-code-agent-team-analysis/" title="Claude Code Agent Team 架构分析：Multi-Agent 协作的范式跃迁"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-04-01</div><div class="info-item-2">Claude Code Agent Team 架构分析：Multi-Agent 协作的范式跃迁</div></div><div class="info-2"><div class="info-item-1"> 本文梳理 Claude Code 新增的 Agent Team 功能的核心机制，并与既有 Sub-Agent 体系做结构性对比。目标读者：对 AI 工程架构感兴趣但不一定有编程背景的人。   背景Claude Code 的 Sub-Agent 能力已经相对成熟——给它一个任务，它会在独立进程中并行处理多个子任务，完成后把结果汇回主对话。这套机制在大多数场景下够用。 但有一类任务它处理得不好：子任务之间存在强依赖关系，或需要实时协商。比如你想让 AI 同时负责写文档和写测试，而测试必须基于最新的接口定义——这时候两个 Sub-Agent 的孤立执行就会出问题。它们各自为政，没有任何横向沟通通道。 Agent Team 就是针对这个问题设计的。  架构设计Agent Team 的核心抽象由四个组件构成： Main Agent（队长）：解析用户意图，拆解任务，创建并分配队友，最终汇总交付。 Team Members（队友）：每个队友在独立的上下文窗口中运行，持有自己的”大脑”。这意味着队友 A 写了什么，队友 B 不会自动感知——这是刻意的设计，目的是防止上下文污染。 Mailbox...</div></div></div></a><a class="pagination-related" href="/2026/04/01/claude-code-skill-discovery/" title="Claude Code 技能发现机制深度解析"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-04-01</div><div class="info-item-2">Claude Code 技能发现机制深度解析</div></div><div class="info-2"><div class="info-item-1"> 基于源码逆向分析，详解 EXPERIMENTAL_SKILL_SEARCH 特性标志控制下的完整技能发现与加载系统。   目录 系统概览 Feature Flag 门控机制 三层发现架构 层一：Turn-0 自动发现 层二：主动搜索工具 DiscoverSkillsTool 层三：远程技能系统   skill_discovery Attachment 数据结构 SKILL.md 扫描与本地加载 SkillTool 三条执行路径 遥测：was_discovered 字段 完整调用流程图 关键源码位置速查表   系统概览Claude Code 的技能发现系统是一个独立于 Proactive 模式的子系统，普通对话模式同样可用。整个系统由编译期 Feature Flag EXPERIMENTAL_SKILL_SEARCH 控制：  外部构建（npm 包）：Flag 为 false，相关代码在打包阶段被死代码消除（DCE），连 &#39;skill_discovery&#39; 字符串字面量都不会出现在产物中。 Anthropic 内部构建：Flag 为 true，完整系统生效。部分功...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/butterfly-icon.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">helson</div><div class="author-info-description">吾生有涯，其知无涯</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">15</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">10</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">0</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/helsome"><i class="fab fa-github"></i><span>GitHub</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/helsome" target="_blank" title="Github"><i class="fab fa-github" style="color: #2A2218;"></i></a></div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%BF%99%E6%98%AF%E4%BB%80%E4%B9%88"><span class="toc-number">1.</span> <span class="toc-text">这是什么</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E7%94%A8%E3%80%8C%E5%8F%8C%E7%BB%88%E7%AB%AF%E3%80%8D%E6%A8%A1%E5%BC%8F"><span class="toc-number">2.</span> <span class="toc-text">为什么用「双终端」模式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%89%8D%E7%BD%AE%E6%9D%A1%E4%BB%B6"><span class="toc-number">3.</span> <span class="toc-text">前置条件</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%A3%9E%E4%B9%A6-MCP"><span class="toc-number">3.1.</span> <span class="toc-text">飞书 MCP</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%A4%E4%B8%AA%E7%BB%88%E7%AB%AF"><span class="toc-number">3.2.</span> <span class="toc-text">两个终端</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%8C%E6%95%B4%E6%B5%81%E7%A8%8B"><span class="toc-number">4.</span> <span class="toc-text">完整流程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Step-1%EF%BC%9A%E7%A1%AE%E5%AE%9A%E7%9F%A5%E8%AF%86%E8%8C%83%E5%9B%B4%EF%BC%88%E7%BB%88%E7%AB%AF-A%EF%BC%89"><span class="toc-number">5.</span> <span class="toc-text">Step 1：确定知识范围（终端 A）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Step-2%EF%BC%9A%E5%86%99%E6%8A%93%E5%8F%96%E6%8F%90%E7%A4%BA%E8%AF%8D%EF%BC%88%E7%BB%88%E7%AB%AF-A%EF%BC%89"><span class="toc-number">6.</span> <span class="toc-text">Step 2：写抓取提示词（终端 A）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-%E4%BB%BB%E5%8A%A1%E8%AF%B4%E6%98%8E"><span class="toc-number">6.1.</span> <span class="toc-text">2.1 任务说明</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-%E9%A3%9E%E4%B9%A6%E6%96%87%E6%A1%A3%E6%B8%85%E5%8D%95"><span class="toc-number">6.2.</span> <span class="toc-text">2.2 飞书文档清单</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-%E6%A0%BC%E5%BC%8F%E8%A7%84%E8%8C%83"><span class="toc-number">6.3.</span> <span class="toc-text">2.3 格式规范</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-4-%E8%BE%93%E5%87%BA%E4%BD%8D%E7%BD%AE"><span class="toc-number">6.4.</span> <span class="toc-text">2.4 输出位置</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Step-3%EF%BC%9AWorker-%E6%8A%93%E5%8F%96%E5%92%8C%E6%95%B4%E7%90%86%EF%BC%88%E7%BB%88%E7%AB%AF-B%EF%BC%89"><span class="toc-number">7.</span> <span class="toc-text">Step 3：Worker 抓取和整理（终端 B）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Worker-%E5%AE%8C%E6%88%90%E5%90%8E%E7%9A%84%E5%85%B8%E5%9E%8B%E8%BE%93%E5%87%BA"><span class="toc-number">7.1.</span> <span class="toc-text">Worker 完成后的典型输出</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Step-4%EF%BC%9AReview-%E5%8F%82%E8%80%83%E6%96%87%E4%BB%B6%EF%BC%88%E7%BB%88%E7%AB%AF-A%EF%BC%89"><span class="toc-number">8.</span> <span class="toc-text">Step 4：Review 参考文件（终端 A）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Step-5%EF%BC%9A%E5%86%99-SKILL-md%EF%BC%88%E7%BB%88%E7%AB%AF-A%EF%BC%89"><span class="toc-number">9.</span> <span class="toc-text">Step 5：写 SKILL.md（终端 A）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#SKILL-md-%E7%9A%84%E5%85%B3%E9%94%AE%E9%83%A8%E5%88%86"><span class="toc-number">9.1.</span> <span class="toc-text">SKILL.md 的关键部分</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%9E%E9%99%85%E6%A1%88%E4%BE%8B%EF%BC%9Awifi-knowledge"><span class="toc-number">10.</span> <span class="toc-text">实际案例：wifi-knowledge</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%88%90%E6%9C%AC%E5%AF%B9%E6%AF%94"><span class="toc-number">11.</span> <span class="toc-text">成本对比</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%AE%BE%E8%AE%A1%E8%A6%81%E7%82%B9"><span class="toc-number">12.</span> <span class="toc-text">设计要点</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98"><span class="toc-number">13.</span> <span class="toc-text">常见问题</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Q-Worker-%E6%8A%93%E9%A3%9E%E4%B9%A6%E6%96%87%E6%A1%A3%E6%8A%A5%E9%94%99%E6%80%8E%E4%B9%88%E5%8A%9E%EF%BC%9F"><span class="toc-number">13.1.</span> <span class="toc-text">Q: Worker 抓飞书文档报错怎么办？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Q-%E9%A3%9E%E4%B9%A6%E6%96%87%E6%A1%A3%E9%87%8C%E6%9C%89%E5%9B%BE%E8%A1%A8-%E7%94%BB%E6%9D%BF%E6%80%8E%E4%B9%88%E5%A4%84%E7%90%86%EF%BC%9F"><span class="toc-number">13.2.</span> <span class="toc-text">Q: 飞书文档里有图表&#x2F;画板怎么处理？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Q-%E5%A6%82%E4%BD%95%E6%9B%B4%E6%96%B0%E7%9F%A5%E8%AF%86%E5%BA%93%EF%BC%9F"><span class="toc-number">13.3.</span> <span class="toc-text">Q: 如何更新知识库？</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/04/01/claude-code-agent-team-analysis/" title="Claude Code Agent Team 架构分析：Multi-Agent 协作的范式跃迁">Claude Code Agent Team 架构分析：Multi-Agent 协作的范式跃迁</a><time datetime="2026-04-01T04:00:00.000Z" title="发表于 2026-04-01 12:00:00">2026-04-01</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/04/01/feishu-to-claude-skill/" title="利用 Claude Code 抓取飞书知识库转换为 Skill 指南">利用 Claude Code 抓取飞书知识库转换为 Skill 指南</a><time datetime="2026-03-31T16:00:00.000Z" title="发表于 2026-04-01 00:00:00">2026-04-01</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/04/01/claude-code-skill-discovery/" title="Claude Code 技能发现机制深度解析">Claude Code 技能发现机制深度解析</a><time datetime="2026-03-31T16:00:00.000Z" title="发表于 2026-04-01 00:00:00">2026-04-01</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/10/25/brute-ratel-C4-badger%E5%85%A8%E5%88%86%E6%9E%90%E6%96%87%E6%A1%A3/" title="brute ratel C4 badger全分析文档">brute ratel C4 badger全分析文档</a><time datetime="2024-10-25T11:37:08.000Z" title="发表于 2024-10-25 19:37:08">2024-10-25</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/10/25/PE%E8%A7%A3%E6%9E%90%E5%99%A8%E7%BC%96%E5%86%99/" title="PE解析器编写">PE解析器编写</a><time datetime="2024-10-25T11:29:28.000Z" title="发表于 2024-10-25 19:29:28">2024-10-25</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2025 - 2026 By helson</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.1</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.4</a></span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.4"></script><script src="/js/main.js?v=5.5.4"></script><div class="js-pjax"></div><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>
