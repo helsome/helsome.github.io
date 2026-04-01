@@ -1,49 +1,45 @@
 ---
-title: "Hello World"
-date: 2024-01-17 21:43:01
-tags: ["博客 reverse 摄影", "博客", "reverse", "摄影"]
+title: "os cs162"
+date: 2024-09-23 19:00:34
+tags: ["课程"]
 categories: []
 ---
 
-Welcome to [Hexo](<https://hexo.io/>)! This is your very first post. Check [documentation](<https://hexo.io/docs/>) for more info. If you get any problems when using Hexo, you can find the answer in [troubleshooting](<https://hexo.io/docs/troubleshooting.html>) or you can ask me on [GitHub](<https://github.com/hexojs/hexo/issues>).
+## Thread and process
 
-## Quick Start
+### address space
 
-### Create a new post
-    
-    
-    $ hexo new "My New Post"
+![image-20240923190556112](/./../pic/os-cs162/image-20240923190556112.png)
 
-More info: [Writing](<https://hexo.io/docs/writing.html>)
+虚拟内存空间要经过转化才能映射到物理空间
 
-### Run server
-    
-    
-    $ hexo server
+![image-20240923190902277](/./../pic/os-cs162/image-20240923190902277.png)
 
-More info: [Server](<https://hexo.io/docs/server.html>)
+process运行在user or kernel可以观察模式位（mod bit）判断
 
-### Generate static files
-    
-    
-    $ hexo generate
+## why thread
 
-More info: [Generating](<https://hexo.io/docs/generating.html>)
+thread是为了解决”muti“的问题，并发！
 
-### Deploy to remote sites
-    
-    
-    $ hexo deploy
+![image-20240923192616081](/./../pic/os-cs162/image-20240923192616081.png)
 
-More info: [Deployment](<https://hexo.io/docs/one-command-deployment.html>)
+并行与并发的区别
 
 __文章作者:[helson](<https://helsome.gihub.io>)
 
- __文章链接:<https://helsome.gihub.io/2024/01/17/hello-world/>
+ __文章链接:<https://helsome.gihub.io/2024/09/23/os-cs162/>
 
 __版权声明: 本博客所有文章除特别声明外，均采用 [CC BY-NC-SA 4.0](<https://creativecommons.org/licenses/by-nc-sa/4.0/>) 许可协议。转载请注明来自 [infinite](<https://helsome.gihub.io>)！
 
-[上一篇PE文件浅析](</2024/01/17/PE%E6%96%87%E4%BB%B6%E7%BB%93%E6%9E%84%EF%BC%88%E8%87%AA%E7%94%A8%EF%BC%89/> "PE文件浅析")
+[课程](</tags/%E8%AF%BE%E7%A8%8B/>)
+
+[上一篇利用dll通知回调加载shellcode](</2024/10/25/%E5%88%A9%E7%94%A8dll%E9%80%9A%E7%9F%A5%E5%9B%9E%E8%B0%83%E5%8A%A0%E8%BD%BDshellcode/> "利用dll通知回调加载shellcode")
+
+[下一篇wannacry勒索病毒加密解密过程分析](</2024/07/08/wannacry/> "wannacry勒索病毒加密解密过程分析")
+
+ __相关推荐
+
+[ __2024-06-20 MYSQL学习笔记](</2024/06/20/MYSQL%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0-0/> "MYSQL学习笔记")
 
 ![avatar](/hexo-blog/source/avatar%20img.jpg)
 
@@ -63,11 +59,9 @@ This is my Blog
 
  __目录
 
-  1. 1. Quick Start
-     1. 1.1. Create a new post
-     2. 1.2. Run server
-     3. 1.3. Generate static files
-     4. 1.4. Deploy to remote sites
+  1. 1. Thread and process
+     1. 1.1. address space
+  2. 2. why thread
 
  __最新文章
 
