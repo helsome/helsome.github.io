@@ -1,0 +1,466 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>KAIROS 模式与 /dream：Claude Code 的仿生记忆系统 | infinite</title><meta name="author" content="helson"><meta name="copyright" content="helson"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="F8F5EF"><meta name="description" content="KAIROS 模式与 &#x2F;dream：Claude Code 的仿生记忆系统 基于源码分析，揭秘 Claude Code 中 AI “做梦整理记忆”的完整机制。   目录 KAIROS 是什么 Feature Flag 体系 日期追加式日志：记忆的原始形态 &#x2F;dream 技能：蒸馏记忆的工人 autoDream：自动触发引擎 四阶段蒸馏流程 触发门控：不是”夜间”而是”空闲足够久">
+<meta property="og:type" content="article">
+<meta property="og:title" content="KAIROS 模式与 &#x2F;dream：Claude Code 的仿生记忆系统">
+<meta property="og:url" content="https://helsome.github.io/2026/04/17/kairos-dream-memory-system/index.html">
+<meta property="og:site_name" content="infinite">
+<meta property="og:description" content="KAIROS 模式与 &#x2F;dream：Claude Code 的仿生记忆系统 基于源码分析，揭秘 Claude Code 中 AI “做梦整理记忆”的完整机制。   目录 KAIROS 是什么 Feature Flag 体系 日期追加式日志：记忆的原始形态 &#x2F;dream 技能：蒸馏记忆的工人 autoDream：自动触发引擎 四阶段蒸馏流程 触发门控：不是”夜间”而是”空闲足够久">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://helsome.github.io/img/butterfly-icon.png">
+<meta property="article:published_time" content="2026-04-16T16:00:00.000Z">
+<meta property="article:modified_time" content="2026-04-17T04:48:13.120Z">
+<meta property="article:author" content="helson">
+<meta property="article:tag" content="AI">
+<meta property="article:tag" content="Claude Code">
+<meta property="article:tag" content="KAIROS">
+<meta property="article:tag" content="记忆系统">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://helsome.github.io/img/butterfly-icon.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "KAIROS 模式与 /dream：Claude Code 的仿生记忆系统",
+  "url": "https://helsome.github.io/2026/04/17/kairos-dream-memory-system/",
+  "image": "https://helsome.github.io/img/butterfly-icon.png",
+  "datePublished": "2026-04-16T16:00:00.000Z",
+  "dateModified": "2026-04-17T04:48:13.120Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "helson",
+      "url": "https://helsome.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://helsome.github.io/2026/04/17/kairos-dream-memory-system/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//fonts.googleapis.com" crossorigin=""/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.4"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', 'F8F5EF')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&amp;display=swap" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.13.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'KAIROS 模式与 /dream：Claude Code 的仿生记忆系统',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="/css/custom.css"><meta name="generator" content="Hexo 8.1.1"></head><body><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">infinite</span></a><a class="nav-page-title" href="/"><span class="site-name">KAIROS 模式与 /dream：Claude Code 的仿生记忆系统</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">KAIROS 模式与 /dream：Claude Code 的仿生记忆系统</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-04-16T16:00:00.000Z" title="发表于 2026-04-17 00:00:00">2026-04-17</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-04-17T04:48:13.120Z" title="更新于 2026-04-17 12:48:13">2026-04-17</time></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div><article class="container post-content" id="article-container"><h1 id="KAIROS-模式与-dream：Claude-Code-的仿生记忆系统"><a href="#KAIROS-模式与-dream：Claude-Code-的仿生记忆系统" class="headerlink" title="KAIROS 模式与 &#x2F;dream：Claude Code 的仿生记忆系统"></a>KAIROS 模式与 &#x2F;dream：Claude Code 的仿生记忆系统</h1><blockquote>
+<p>基于源码分析，揭秘 Claude Code 中 AI “做梦整理记忆”的完整机制。</p>
+</blockquote>
+<hr>
+<h2 id="目录"><a href="#目录" class="headerlink" title="目录"></a>目录</h2><ol>
+<li><a href="#kairos-%E6%98%AF%E4%BB%80%E4%B9%88">KAIROS 是什么</a></li>
+<li><a href="#feature-flag-%E4%BD%93%E7%B3%BB">Feature Flag 体系</a></li>
+<li><a href="#%E6%97%A5%E6%9C%9F%E8%BF%BD%E5%8A%A0%E5%BC%8F%E6%97%A5%E5%BF%97%E8%AE%B0%E5%BF%86%E7%9A%84%E5%8E%9F%E5%A7%8B%E5%BD%A2%E6%80%81">日期追加式日志：记忆的原始形态</a></li>
+<li><a href="#dream-%E6%8A%80%E8%83%BD%E8%92%B8%E9%A6%8F%E8%AE%B0%E5%BF%86%E7%9A%84%E5%B7%A5%E4%BA%BA">&#x2F;dream 技能：蒸馏记忆的工人</a></li>
+<li><a href="#autodream%E8%87%AA%E5%8A%A8%E8%A7%A6%E5%8F%91%E5%BC%95%E6%93%8E">autoDream：自动触发引擎</a></li>
+<li><a href="#%E5%9B%9B%E9%98%B6%E6%AE%B5%E8%92%B8%E9%A6%8F%E6%B5%81%E7%A8%8B">四阶段蒸馏流程</a></li>
+<li><a href="#%E8%A7%A6%E5%8F%91%E9%97%A8%E6%8E%A7%E4%B8%8D%E6%98%AF%E5%A4%9C%E9%97%B4%E8%80%8C%E6%98%AF%E7%A9%BA%E9%97%B2%E8%B6%B3%E5%A4%9F%E4%B9%85">触发门控：不是”夜间”而是”空闲足够久”</a></li>
+<li><a href="#kairos-agent-%E6%A8%A1%E5%BC%8F%E6%B0%B8%E7%BB%AD%E8%BF%90%E8%A1%8C%E7%9A%84%E8%87%AA%E4%B8%BB%E4%BD%93">KAIROS Agent 模式：永续运行的自主体</a></li>
+<li><a href="#%E5%AE%8C%E6%95%B4%E5%86%85%E5%AD%98%E6%B5%81%E8%BD%AC%E5%9B%BE">完整内存流转图</a></li>
+<li><a href="#%E5%85%B3%E9%94%AE%E6%BA%90%E7%A0%81%E4%BD%8D%E7%BD%AE%E9%80%9F%E6%9F%A5%E8%A1%A8">关键源码位置速查表</a></li>
+</ol>
+<hr>
+<h2 id="KAIROS-是什么"><a href="#KAIROS-是什么" class="headerlink" title="KAIROS 是什么"></a>KAIROS 是什么</h2><p>KAIROS（καιρός，古希腊语，意为”恰当的时机”）是 Claude Code 中一个<strong>完全自主、持续运行的 Agent 模式</strong>的代号。与普通的单次对话不同，KAIROS 模式下 Claude 是一个”一直在线”的智能体：</p>
+<ul>
+<li>通过 <code>&lt;tick&gt;</code> 心跳信号定期唤醒</li>
+<li>主动订阅 GitHub PR 事件</li>
+<li>在低活跃期整理记忆</li>
+<li>向用户推送通知</li>
+</ul>
+<p>整个系统在 <code>src/main.tsx</code> 中有超过 80 处 <code>feature(&#39;KAIROS&#39;)</code> 门控，是 Claude Code 中规模最大的实验性特性之一。</p>
+<hr>
+<h2 id="Feature-Flag-体系"><a href="#Feature-Flag-体系" class="headerlink" title="Feature Flag 体系"></a>Feature Flag 体系</h2><p>KAIROS 不是一个单一开关，而是一组<strong>精细化的子标志</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>标志</th>
+<th>功能</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>KAIROS</code></td>
+<td>主标志，启用全套 KAIROS 特性</td>
+</tr>
+<tr>
+<td><code>KAIROS_DREAM</code></td>
+<td>仅启用 <code>/dream</code> 记忆蒸馏技能</td>
+</tr>
+<tr>
+<td><code>KAIROS_BRIEF</code></td>
+<td>仅启用 <code>BriefTool</code>（主动状态更新）</td>
+</tr>
+<tr>
+<td><code>KAIROS_GITHUB_WEBHOOKS</code></td>
+<td>启用 <code>SubscribePRTool</code>（GitHub PR 订阅）</td>
+</tr>
+<tr>
+<td><code>KAIROS_CHANNELS</code></td>
+<td>频道通知</td>
+</tr>
+<tr>
+<td><code>KAIROS_PUSH_NOTIFICATION</code></td>
+<td>设备推送通知</td>
+</tr>
+</tbody></table>
+<p>Dream 技能注册（<code>src/skills/bundled/index.ts</code> 第 35 行）：</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// dream 技能只要 KAIROS 或 KAIROS_DREAM 任一为真就注册</span></span><br><span class="line"><span class="title function_">feature</span>(<span class="string">&#x27;KAIROS&#x27;</span>) || <span class="title function_">feature</span>(<span class="string">&#x27;KAIROS_DREAM&#x27;</span>)</span><br><span class="line">  ? [<span class="built_in">require</span>(<span class="string">&#x27;./dream.js&#x27;</span>)]</span><br><span class="line">  : []</span><br></pre></td></tr></table></figure>
+
+<p>KAIROS 模式激活状态通过全局 state 追踪（<code>src/bootstrap/state.ts</code> 第 1085–1090 行）：</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="keyword">function</span> <span class="title function_">getKairosActive</span>(<span class="params"></span>): <span class="built_in">boolean</span> &#123; ... &#125;</span><br><span class="line"><span class="keyword">export</span> <span class="keyword">function</span> <span class="title function_">setKairosActive</span>(<span class="params"><span class="attr">value</span>: <span class="built_in">boolean</span></span>): <span class="built_in">void</span> &#123; ... &#125;</span><br></pre></td></tr></table></figure>
+
+<p>并在遥测元数据中标记（<code>src/services/analytics/metadata.ts</code> 第 493 行）：</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">kairosActive</span>?: <span class="literal">true</span></span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="日期追加式日志：记忆的原始形态"><a href="#日期追加式日志：记忆的原始形态" class="headerlink" title="日期追加式日志：记忆的原始形态"></a>日期追加式日志：记忆的原始形态</h2><p>这是整个系统最具设计感的部分。在 KAIROS 模式下，Claude <strong>不再维护结构化的 MEMORY.md</strong>，而是向按日期命名的日志文件追加原始条目。</p>
+<p><strong>路径构造</strong>（<code>src/memdir/paths.ts</code> 第 246–251 行）：</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="keyword">function</span> <span class="title function_">getAutoMemDailyLogPath</span>(<span class="params"><span class="attr">date</span>: <span class="title class_">Date</span> = <span class="keyword">new</span> <span class="title class_">Date</span>()</span>): <span class="built_in">string</span> &#123;</span><br><span class="line">  <span class="keyword">const</span> yyyy = date.<span class="title function_">getFullYear</span>().<span class="title function_">toString</span>()</span><br><span class="line">  <span class="keyword">const</span> mm = (date.<span class="title function_">getMonth</span>() + <span class="number">1</span>).<span class="title function_">toString</span>().<span class="title function_">padStart</span>(<span class="number">2</span>, <span class="string">&#x27;0&#x27;</span>)</span><br><span class="line">  <span class="keyword">const</span> dd = date.<span class="title function_">getDate</span>().<span class="title function_">toString</span>().<span class="title function_">padStart</span>(<span class="number">2</span>, <span class="string">&#x27;0&#x27;</span>)</span><br><span class="line">  <span class="keyword">return</span> <span class="title function_">join</span>(<span class="title function_">getAutoMemPath</span>(), <span class="string">&#x27;logs&#x27;</span>, yyyy, mm, <span class="string">`<span class="subst">$&#123;yyyy&#125;</span>-<span class="subst">$&#123;mm&#125;</span>-<span class="subst">$&#123;dd&#125;</span>.md`</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>实际路径</strong>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">~/.claude/projects/&lt;项目路径哈希&gt;/memory/</span><br><span class="line">└── logs/</span><br><span class="line">    └── 2026/</span><br><span class="line">        └── 03/</span><br><span class="line">            ├── 2026-03-28.md   ← 周五的原始日志</span><br><span class="line">            ├── 2026-03-29.md   ← 周六的原始日志</span><br><span class="line">            └── 2026-03-30.md   ← 今天的追加条目（持续写入）</span><br></pre></td></tr></table></figure>
+
+<p><code>src/memdir/memdir.ts</code> 第 323 行的注释解释了设计意图：</p>
+<blockquote>
+<p>“Used by assistant mode (feature(‘KAIROS’)): rather than maintaining MEMORY.md as a live index, the agent appends to a date-named log file as it works. A separate nightly &#x2F;dream skill distills these logs into topic files + MEMORY.md.”</p>
+</blockquote>
+<p><strong>为什么用追加式日志而不是直接更新结构化文件？</strong></p>
+<p>在高频交互的自主 Agent 场景下，频繁更新结构化文件会引发：</p>
+<ol>
+<li>并发写入冲突（多个子 Agent 同时修改同一文件）</li>
+<li>中途崩溃导致文件损坏</li>
+<li>每次写入都要读-改-写整个文件，代价高</li>
+</ol>
+<p>追加式日志是数据库领域成熟的 WAL（Write-Ahead Log）模式，Claude 借用了同样的思路。</p>
+<hr>
+<h2 id="dream-技能：蒸馏记忆的工人"><a href="#dream-技能：蒸馏记忆的工人" class="headerlink" title="&#x2F;dream 技能：蒸馏记忆的工人"></a>&#x2F;dream 技能：蒸馏记忆的工人</h2><p><code>/dream</code> 是一个注册在 <code>src/skills/bundled/index.ts</code> 的内置技能，底层实现在编译后的 <code>dream.js</code>（Anthropic 内部代码，源码中以编译产物形式存在）。</p>
+<p>它的本质是：<strong>启动一个完全独立的 fork 子 Agent，专门执行记忆整理工作。</strong></p>
+<p>触发方式有两种：</p>
+<ol>
+<li><strong>用户手动</strong>：在 KAIROS 模式下输入 <code>/dream</code></li>
+<li><strong>自动触发</strong>：由 <code>autoDream.ts</code> 后台引擎监控并自动调用</li>
+</ol>
+<hr>
+<h2 id="autoDream：自动触发引擎"><a href="#autoDream：自动触发引擎" class="headerlink" title="autoDream：自动触发引擎"></a>autoDream：自动触发引擎</h2><p>核心文件：<code>src/services/autoDream/autoDream.ts</code></p>
+<p>这个模块负责在后台监控条件，并在合适时机自动触发 <code>/dream</code>。相关子模块：</p>
+<table>
+<thead>
+<tr>
+<th>文件</th>
+<th>职责</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>autoDream.ts</code></td>
+<td>主调度引擎</td>
+</tr>
+<tr>
+<td><code>consolidationPrompt.ts</code></td>
+<td>发送给蒸馏子 Agent 的完整提示词</td>
+</tr>
+<tr>
+<td><code>consolidationLock.ts</code></td>
+<td>防止多进程同时运行的锁文件管理</td>
+</tr>
+<tr>
+<td><code>config.ts</code></td>
+<td>启用&#x2F;禁用开关，key: <code>autoDreamEnabled</code></td>
+</tr>
+</tbody></table>
+<p><strong>任务类型注册</strong>（<code>src/Task.ts</code> 第 13 行）：</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// &#x27;dream&#x27; 是合法的 TaskType</span></span><br><span class="line"><span class="keyword">type</span> <span class="title class_">TaskType</span> = <span class="string">&#x27;bash&#x27;</span> | <span class="string">&#x27;edit&#x27;</span> | <span class="string">&#x27;read&#x27;</span> | <span class="string">&#x27;write&#x27;</span> | <span class="string">&#x27;dream&#x27;</span> | ...</span><br></pre></td></tr></table></figure>
+
+<p><strong>UI 状态展示</strong>（<code>src/tasks/DreamTask/DreamTask.ts</code> 第 63 行）：</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="title function_">createTaskStateBase</span>(id, <span class="string">&#x27;dream&#x27;</span>, <span class="string">&#x27;dreaming&#x27;</span>)</span><br><span class="line"><span class="comment">// 任务的 display label 直接就是 &quot;dreaming&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>文件变更追踪</strong>（<code>autoDream.ts</code> 第 281–313 行）：</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// makeDreamProgressWatcher 监听子 Agent 的工具调用</span></span><br><span class="line"><span class="comment">// 凡是 FileEditTool 或 FileWriteTool 的调用，路径都被记录到 filesTouched[]</span></span><br><span class="line"><span class="comment">// DreamTaskState.filesTouched 记录本次 dream 运行写过哪些文件</span></span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="四阶段蒸馏流程"><a href="#四阶段蒸馏流程" class="headerlink" title="四阶段蒸馏流程"></a>四阶段蒸馏流程</h2><p><code>consolidationPrompt.ts</code> 定义了发送给 dream 子 Agent 的完整任务提示，标题明确写着：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"># Dream: Memory Consolidation</span><br><span class="line">You are performing a dream — a reflective pass over your memory files.</span><br></pre></td></tr></table></figure>
+
+<p>整个蒸馏过程分为四个阶段：</p>
+<h3 id="Phase-1：定向（Orient）"><a href="#Phase-1：定向（Orient）" class="headerlink" title="Phase 1：定向（Orient）"></a>Phase 1：定向（Orient）</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">1. ls memory 目录</span><br><span class="line">2. 读取 MEMORY.md（快速了解已知主题）</span><br><span class="line">3. 浏览现有 topic 文件（skim，不深读）</span><br><span class="line">4. 列举 logs/ 和 sessions/ 子目录</span><br></pre></td></tr></table></figure>
+
+<p>目标：建立全局视图，了解”已经知道什么”和”原始信号在哪”。</p>
+<h3 id="Phase-2：收集近期信号（Gather-Recent-Signal）"><a href="#Phase-2：收集近期信号（Gather-Recent-Signal）" class="headerlink" title="Phase 2：收集近期信号（Gather Recent Signal）"></a>Phase 2：收集近期信号（Gather Recent Signal）</h3><p>按优先级：</p>
+<ol>
+<li><strong>日期日志</strong>（<code>logs/YYYY/MM/YYYY-MM-DD.md</code>）— 最优先，追加式原始记录</li>
+<li><strong>漂移的记忆</strong>（drifted memories）— 上次蒸馏后可能已过期的条目</li>
+<li><strong>对话 JSONL</strong>（<code>sessions/</code> 目录中的转录文件）— 通过 grep 窄范围提取，而非全读</li>
+</ol>
+<h3 id="Phase-3：整合（Consolidate）"><a href="#Phase-3：整合（Consolidate）" class="headerlink" title="Phase 3：整合（Consolidate）"></a>Phase 3：整合（Consolidate）</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">- 写入或更新 topic 文件（如 user_preferences.md, project_context.md）</span><br><span class="line">- 融合新信号进入已有结构</span><br><span class="line">- 相对日期转为绝对日期（&quot;上周四&quot; → &quot;2026-03-26&quot;）</span><br><span class="line">- 删除被新信息推翻的旧事实</span><br></pre></td></tr></table></figure>
+
+<p>这是真正的”蒸馏”：原始的流式日志变成结构化的主题文档。文件名由模型自己决定，系统不预设。</p>
+<h3 id="Phase-4：精简与索引（Prune-and-Index）"><a href="#Phase-4：精简与索引（Prune-and-Index）" class="headerlink" title="Phase 4：精简与索引（Prune and Index）"></a>Phase 4：精简与索引（Prune and Index）</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">- 更新 MEMORY.md 作为稀疏索引</span><br><span class="line">- 保持在 MAX_ENTRYPOINT_LINES 行以内 + ~25KB 以内</span><br><span class="line">- 格式：- [Title](file.md) — one-line hook</span><br></pre></td></tr></table></figure>
+
+<p>最终 <code>MEMORY.md</code> 是整个记忆系统的”目录”，每行一个主题文件的指针。</p>
+<p><strong>整合前后对比：</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">整合前（原始日志 logs/2026/03/2026-03-30.md）：</span><br><span class="line">  [14:23] 用户说不喜欢在回复末尾加总结</span><br><span class="line">  [15:07] 修改了 src/model/transformer.py 的 attention 机制</span><br><span class="line">  [16:44] 用户提到明天要赶 ICLR deadline</span><br><span class="line">  [17:02] 用户更喜欢 rebase 而不是 merge</span><br><span class="line"></span><br><span class="line">整合后：</span><br><span class="line">  memory/user_preferences.md  ← &quot;不加总结、用 rebase&quot;</span><br><span class="line">  memory/project_context.md   ← &quot;transformer.py attention 修改、ICLR deadline&quot;</span><br><span class="line">  MEMORY.md                   ← 两行指针</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="触发门控：不是”夜间”而是”空闲足够久”"><a href="#触发门控：不是”夜间”而是”空闲足够久”" class="headerlink" title="触发门控：不是”夜间”而是”空闲足够久”"></a>触发门控：不是”夜间”而是”空闲足够久”</h2><p><strong>重要澄清</strong>：源码中<strong>没有</strong>“检测到夜间”或”检测到低活跃时段”的逻辑。<code>memdir.ts</code> 注释里的”nightly”只是非正式文档用语，<strong>实际触发条件是：</strong></p>
+<p><strong>条件 1：时间间隔</strong>（<code>autoDream.ts</code> 第 6–8 行）</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hoursSince &gt;= minHours  <span class="comment">// 默认：距上次蒸馏超过 24 小时</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>条件 2：会话数量</strong></p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">transcriptCount &gt;= minSessions  <span class="comment">// 默认：上次蒸馏后新增 ≥ 5 个会话</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>条件 3：锁文件（防并发）</strong>（<code>consolidationLock.ts</code>）</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 检查 .consolidate-lock 文件</span></span><br><span class="line"><span class="comment">// 验证 PID + 文件修改时间，确保没有其他进程正在运行蒸馏</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>条件 4：用户近期无交互</strong>（<code>backgroundHousekeeping.ts</code> 第 44–75 行）</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 如果用户在过去 60 秒内有交互，推迟执行</span></span><br><span class="line"><span class="keyword">if</span> (<span class="title function_">getLastInteractionTime</span>() &gt; <span class="title class_">Date</span>.<span class="title function_">now</span>() - <span class="number">1000</span> * <span class="number">60</span>) &#123;</span><br><span class="line">  <span class="comment">// 重新调度，等待用户闲下来</span></span><br><span class="line">  <span class="built_in">setTimeout</span>(tryAgain, <span class="variable constant_">RETRY_INTERVAL</span>)</span><br><span class="line">  <span class="keyword">return</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>扫描节流</strong>：即使时间条件满足，会话列表重扫限制每 10 分钟最多一次：</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> <span class="variable constant_">SESSION_SCAN_INTERVAL_MS</span> = <span class="number">10</span> * <span class="number">60</span> * <span class="number">1000</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>阈值来源</strong>：<code>minHours</code> 和 <code>minSessions</code> 由 GrowthBook 动态标志 <code>tengu_onyx_plover</code> 控制，可以远程调整而无需发版。</p>
+<hr>
+<h2 id="KAIROS-Agent-模式：永续运行的自主体"><a href="#KAIROS-Agent-模式：永续运行的自主体" class="headerlink" title="KAIROS Agent 模式：永续运行的自主体"></a>KAIROS Agent 模式：永续运行的自主体</h2><p>理解 dream 系统需要先理解 KAIROS 的整体模式。</p>
+<p>KAIROS 不是用户发起的对话，而是一个<strong>持续运行的后台 Agent</strong>，靠 <code>&lt;tick&gt;</code> 心跳维持活跃：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">用户不在线</span><br><span class="line">  ↓</span><br><span class="line">KAIROS Agent 等待 tick（通过 SleepTool 休眠）</span><br><span class="line">  ↓</span><br><span class="line">tick 到达（定期心跳）</span><br><span class="line">  ↓</span><br><span class="line">Agent 被唤醒：检查是否有 PR 事件、日历提醒、待处理任务</span><br><span class="line">  ↓</span><br><span class="line">[若有工作] 执行工作</span><br><span class="line">[若无工作] 继续 SleepTool 休眠</span><br><span class="line"></span><br><span class="line">同时：</span><br><span class="line">autoDream 监控器在后台运行</span><br><span class="line">  ↓</span><br><span class="line">条件满足（24h + 5 sessions + 用户空闲）</span><br><span class="line">  ↓</span><br><span class="line">fork 出 dream 子 Agent</span><br><span class="line">  ↓</span><br><span class="line">dream 子 Agent 执行四阶段蒸馏</span><br><span class="line">  ↓</span><br><span class="line">写入 topic 文件，更新 MEMORY.md</span><br><span class="line">  ↓</span><br><span class="line">DreamTask 状态更新为 &quot;completed&quot;，UI 显示 &quot;last ran X ago&quot;</span><br></pre></td></tr></table></figure>
+
+<p>KAIROS Agent 相关工具（<code>src/tools.ts</code> 第 26–50 行）：</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 全部在 KAIROS 模式下可用</span></span><br><span class="line"><span class="title class_">SleepTool</span>            <span class="comment">// 让 Agent 休眠到下一个 tick</span></span><br><span class="line"><span class="title class_">SendUserFileTool</span>     <span class="comment">// 主动向用户发送文件</span></span><br><span class="line"><span class="title class_">PushNotificationTool</span> <span class="comment">// 向设备推送通知</span></span><br><span class="line"><span class="title class_">SubscribePRTool</span>      <span class="comment">// 订阅 GitHub PR 事件（KAIROS_GITHUB_WEBHOOKS）</span></span><br><span class="line"><span class="title class_">BriefTool</span>            <span class="comment">// 主动发出状态摘要（KAIROS_BRIEF）</span></span><br><span class="line"><span class="title class_">SuggestBackgroundPRTool</span>  <span class="comment">// 后台 PR 建议</span></span><br><span class="line"><span class="title class_">ScheduleCronTool</span>     <span class="comment">// 会话内 cron 调度</span></span><br></pre></td></tr></table></figure>
+
+<p>SleepTool 的引导语（<code>src/tools/SleepTool/prompt.ts</code> 第 11 行）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">You may receive &lt;tick&gt; prompts — these are periodic check-ins.</span><br><span class="line">Look for useful work to do before sleeping.</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="完整内存流转图"><a href="#完整内存流转图" class="headerlink" title="完整内存流转图"></a>完整内存流转图</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br></pre></td><td class="code"><pre><span class="line">KAIROS Agent 工作中</span><br><span class="line">    │</span><br><span class="line">    ▼ 每次有值得记录的信息</span><br><span class="line">追加写入 logs/YYYY/MM/YYYY-MM-DD.md</span><br><span class="line">（append-only，永不修改旧条目）</span><br><span class="line"></span><br><span class="line">    │ 累积多个会话 + 24小时过去</span><br><span class="line">    │ 用户当前空闲 + 无锁冲突</span><br><span class="line">    ▼</span><br><span class="line">autoDream.ts 触发条件满足</span><br><span class="line">    │</span><br><span class="line">    ▼</span><br><span class="line">fork dream 子 Agent 启动</span><br><span class="line">DreamTask 状态: &quot;dreaming&quot;</span><br><span class="line"></span><br><span class="line">    │</span><br><span class="line">    ▼ Phase 1: Orient</span><br><span class="line">读取现有 memory/ 目录结构</span><br><span class="line">读 MEMORY.md 稀疏索引</span><br><span class="line">浏览现有 topic 文件</span><br><span class="line"></span><br><span class="line">    │</span><br><span class="line">    ▼ Phase 2: Gather</span><br><span class="line">读取近期 logs/YYYY/MM/*.md    ← 主要信号源</span><br><span class="line">检查漂移的记忆条目</span><br><span class="line">grep sessions/*.jsonl          ← 补充信号</span><br><span class="line"></span><br><span class="line">    │</span><br><span class="line">    ▼ Phase 3: Consolidate</span><br><span class="line">                    ┌─────────────────────────────────┐</span><br><span class="line">                    │         memory/ 目录             │</span><br><span class="line">                    │                                 │</span><br><span class="line">logs/2026/03/       │  user_preferences.md  (更新)    │</span><br><span class="line">2026-03-28.md  ────▶│  project_context.md   (更新)    │</span><br><span class="line">2026-03-29.md  ────▶│  coding_patterns.md   (新建)    │</span><br><span class="line">2026-03-30.md  ────▶│  ...                            │</span><br><span class="line">                    │                                 │</span><br><span class="line">                    │  相对日期 → 绝对日期              │</span><br><span class="line">                    │  矛盾事实 → 删除旧的              │</span><br><span class="line">                    └─────────────────────────────────┘</span><br><span class="line"></span><br><span class="line">    │</span><br><span class="line">    ▼ Phase 4: Prune &amp; Index</span><br><span class="line">更新 MEMORY.md（稀疏索引，&lt; MAX_ENTRYPOINT_LINES 行）</span><br><span class="line">格式：- [Title](file.md) — one-line hook</span><br><span class="line"></span><br><span class="line">    │</span><br><span class="line">    ▼</span><br><span class="line">DreamTask 状态: &quot;completed&quot;</span><br><span class="line">filesTouched[] 记录本次修改的文件列表</span><br><span class="line">UI: &quot;last ran X ago&quot;</span><br><span class="line"></span><br><span class="line">    │</span><br><span class="line">    ▼ 下次 KAIROS Agent 工作时</span><br><span class="line">读取 MEMORY.md 获取全局上下文</span><br><span class="line">（不再需要读完整的 logs/，已被蒸馏）</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="关键源码位置速查表"><a href="#关键源码位置速查表" class="headerlink" title="关键源码位置速查表"></a>关键源码位置速查表</h2><table>
+<thead>
+<tr>
+<th>功能</th>
+<th>文件</th>
+<th>行号</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>KAIROS 主标志门控（命令注册）</td>
+<td><code>src/commands.ts</code></td>
+<td>63, 67, 70, 101</td>
+</tr>
+<tr>
+<td>KAIROS 工具注册</td>
+<td><code>src/tools.ts</code></td>
+<td>26, 42, 46, 50</td>
+</tr>
+<tr>
+<td>dream 技能注册（<code>KAIROS|KAIROS_DREAM</code>）</td>
+<td><code>src/skills/bundled/index.ts</code></td>
+<td>35–39</td>
+</tr>
+<tr>
+<td><code>getKairosActive</code> &#x2F; <code>setKairosActive</code></td>
+<td><code>src/bootstrap/state.ts</code></td>
+<td>1085–1090</td>
+</tr>
+<tr>
+<td>遥测元数据 <code>kairosActive</code></td>
+<td><code>src/services/analytics/metadata.ts</code></td>
+<td>493</td>
+</tr>
+<tr>
+<td>日期日志路径构造</td>
+<td><code>src/memdir/paths.ts</code></td>
+<td>246–251</td>
+</tr>
+<tr>
+<td>设计意图注释</td>
+<td><code>src/memdir/memdir.ts</code></td>
+<td>323, 335–348</td>
+</tr>
+<tr>
+<td>autoDream 主调度引擎</td>
+<td><code>src/services/autoDream/autoDream.ts</code></td>
+<td>全文</td>
+</tr>
+<tr>
+<td>四阶段蒸馏提示词</td>
+<td><code>src/services/autoDream/consolidationPrompt.ts</code></td>
+<td>全文</td>
+</tr>
+<tr>
+<td>并发锁管理</td>
+<td><code>src/services/autoDream/consolidationLock.ts</code></td>
+<td>全文</td>
+</tr>
+<tr>
+<td>启用&#x2F;禁用开关</td>
+<td><code>src/services/autoDream/config.ts</code></td>
+<td>9</td>
+</tr>
+<tr>
+<td>DreamTask 注册</td>
+<td><code>src/tasks/DreamTask/DreamTask.ts</code></td>
+<td>全文</td>
+</tr>
+<tr>
+<td><code>&#39;dream&#39;</code> 作为 TaskType</td>
+<td><code>src/Task.ts</code></td>
+<td>13</td>
+</tr>
+<tr>
+<td>“dreaming” display label</td>
+<td><code>src/tasks/DreamTask/DreamTask.ts</code></td>
+<td>63</td>
+</tr>
+<tr>
+<td>文件变更追踪（makeDreamProgressWatcher）</td>
+<td><code>src/services/autoDream/autoDream.ts</code></td>
+<td>281–313</td>
+</tr>
+<tr>
+<td>用户交互检查（推迟执行）</td>
+<td><code>src/backgroundHousekeeping.ts</code></td>
+<td>44–75</td>
+</tr>
+<tr>
+<td>会话扫描节流（10分钟）</td>
+<td><code>src/services/autoDream/autoDream.ts</code></td>
+<td><code>SESSION_SCAN_INTERVAL_MS</code></td>
+</tr>
+<tr>
+<td>SleepTool 引导语（tick 机制）</td>
+<td><code>src/tools/SleepTool/prompt.ts</code></td>
+<td>11</td>
+</tr>
+<tr>
+<td>MemoryFileSelector UI（”last ran X ago”）</td>
+<td><code>src/components/MemoryFileSelector.tsx</code></td>
+<td>192</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>KAIROS 与 <code>/dream</code> 构成了一套完整的<strong>仿生记忆系统</strong>：</p>
+<ol>
+<li><strong>记录（海马体）</strong>：工作时实时向日期日志追加原始条目，保持低开销</li>
+<li><strong>蒸馏（慢波睡眠）</strong>：空闲足够久后，fork 独立子 Agent 执行四阶段整理</li>
+<li><strong>索引（记忆巩固）</strong>：原始流式日志压缩为结构化主题文件 + 稀疏索引</li>
+</ol>
+<p>“nightly &#x2F;dream”的命名并非字面意义上的定时任务，而是一个精准的仿生隐喻：<strong>当系统”足够空闲”时，自动发生的记忆巩固过程。</strong> 人类睡眠中海马体向新皮层传输记忆的机制，在这里被实现为：日期追加日志 → fork 子 Agent → 结构化 topic 文件。</p>
+<p>这是工程设计向认知科学借鉴的一次有趣实践。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://helsome.github.io">helson</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://helsome.github.io/2026/04/17/kairos-dream-memory-system/">https://helsome.github.io/2026/04/17/kairos-dream-memory-system/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://helsome.github.io" target="_blank">infinite</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/AI/">AI</a><a class="post-meta__tags" href="/tags/Claude-Code/">Claude Code</a><a class="post-meta__tags" href="/tags/KAIROS/">KAIROS</a><a class="post-meta__tags" href="/tags/%E8%AE%B0%E5%BF%86%E7%B3%BB%E7%BB%9F/">记忆系统</a></div><div class="post-share"><div class="social-share" data-image="/img/butterfly-icon.png" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related full-width" href="/2026/04/17/claude-code-context-compression-system/" title="Claude Code 上下文压缩系统深度解析"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">Claude Code 上下文压缩系统深度解析</div></div><div class="info-2"><div class="info-item-1">Claude Code 上下文压缩系统深度解析 基于源码分析，揭秘 Claude Code 如何通过五层机制让对话”永不超限”。   目录 系统全景 上下文窗口检测 Token 计数机制 第一层：时间触发微压缩 第二层：缓存微压缩（ant 专属） 第三层：自动压缩 第四层：会话记忆压缩 第五层：完全压缩 压缩后的上下文重建 技能内容的跨压缩存活 警告与阻断系统 查询循环中的触发顺序 所有关键常量速查表   系统全景所有 LLM 都有上下文窗口限制。Claude Code 的解法不是单一机制，而是五层递进式压缩架构，按照代价从低到高依次尝试： 12345678910111213141516Token 压力上升     │     ▼[层一] 时间触发微压缩     ← 检测服务端缓存已冷，清空旧工具结果     │     ▼[层二] 缓存微压缩         ← 通过 API cache_edits 在服务端静默删除（ant 专属）     │     ▼[层三] 自动压缩           ← Token 超过阈值时触发，带熔断器     │     ▼[层四] 会话记忆压...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2026/04/17/claude-code-skill-discovery-mechanism/" title="Claude Code 技能发现机制深度解析"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-04-17</div><div class="info-item-2">Claude Code 技能发现机制深度解析</div></div><div class="info-2"><div class="info-item-1">Claude Code 技能发现机制深度解析 基于源码逆向分析，详解 EXPERIMENTAL_SKILL_SEARCH 特性标志控制下的完整技能发现与加载系统。   目录 系统概览 Feature Flag 门控机制 三层发现架构 层一：Turn-0 自动发现 层二：主动搜索工具 DiscoverSkillsTool 层三：远程技能系统   skill_discovery Attachment 数据结构 SKILL.md 扫描与本地加载 SkillTool 三条执行路径 遥测：was_discovered 字段 完整调用流程图 关键源码位置速查表   系统概览Claude Code 的技能发现系统是一个独立于 Proactive 模式的子系统，普通对话模式同样可用。整个系统由编译期 Feature Flag EXPERIMENTAL_SKILL_SEARCH 控制：  外部构建（npm 包）：Flag 为 false，相关代码在打包阶段被死代码消除（DCE），连 &#39;skill_discovery&#39; 字符串字面量都不会出现在产物中。 Anthropic 内部构建：...</div></div></div></a><a class="pagination-related" href="/2026/04/17/claude-code-context-compression-system/" title="Claude Code 上下文压缩系统深度解析"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-04-17</div><div class="info-item-2">Claude Code 上下文压缩系统深度解析</div></div><div class="info-2"><div class="info-item-1">Claude Code 上下文压缩系统深度解析 基于源码分析，揭秘 Claude Code 如何通过五层机制让对话”永不超限”。   目录 系统全景 上下文窗口检测 Token 计数机制 第一层：时间触发微压缩 第二层：缓存微压缩（ant 专属） 第三层：自动压缩 第四层：会话记忆压缩 第五层：完全压缩 压缩后的上下文重建 技能内容的跨压缩存活 警告与阻断系统 查询循环中的触发顺序 所有关键常量速查表   系统全景所有 LLM 都有上下文窗口限制。Claude Code 的解法不是单一机制，而是五层递进式压缩架构，按照代价从低到高依次尝试： 12345678910111213141516Token 压力上升     │     ▼[层一] 时间触发微压缩     ← 检测服务端缓存已冷，清空旧工具结果     │     ▼[层二] 缓存微压缩         ← 通过 API cache_edits 在服务端静默删除（ant 专属）     │     ▼[层三] 自动压缩           ← Token 超过阈值时触发，带熔断器     │     ▼[层四] 会话记忆压...</div></div></div></a><a class="pagination-related" href="/2026/04/01/feishu-to-claude-skill/" title="利用 Claude Code 抓取飞书知识库转换为 Skill 指南"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-04-01</div><div class="info-item-2">利用 Claude Code 抓取飞书知识库转换为 Skill 指南</div></div><div class="info-2"><div class="info-item-1">这是什么把飞书 Wiki 里的技术文档（Bug 案例、SOP、流程指南等）拉下来，整理成 Claude Code 插件可以直接引用的内置知识库 Skill。 产出物：skills/&lt;name&gt;/SKILL.md + references/*.md，纯静态文件，运行时零 API 调用。  为什么用「双终端」模式 一句话：省钱。  制作一个知识库 Skill 的工作量大致分两类：    工作类型 举例 特点    动脑的 确定知识范围、设计 Skill 结构、写 SKILL.md 路由表、Review 产出质量 需要强推理，量少   动手的 遍历飞书文档树、逐篇 fetch、清理飞书特有标签、合并整理、控制体积 不需要强推理，量大   如果全程用 Opus（贵）干，大量 token 花在「读飞书文档 → 复制粘贴 → 清理格式」这种搬砖活上，很浪费。 所以我们拆成两个终端： 123456789┌─────────────────────────┐     提示词文件      ┌─────────────────────────┐│  终端 A: Plan Model  ...</div></div></div></a><a class="pagination-related" href="/2026/04/01/claude-code-skill-discovery/" title="Claude Code 技能发现机制深度解析"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-04-01</div><div class="info-item-2">Claude Code 技能发现机制深度解析</div></div><div class="info-2"><div class="info-item-1"> 基于源码逆向分析，详解 EXPERIMENTAL_SKILL_SEARCH 特性标志控制下的完整技能发现与加载系统。   目录 系统概览 Feature Flag 门控机制 三层发现架构 层一：Turn-0 自动发现 层二：主动搜索工具 DiscoverSkillsTool 层三：远程技能系统   skill_discovery Attachment 数据结构 SKILL.md 扫描与本地加载 SkillTool 三条执行路径 遥测：was_discovered 字段 完整调用流程图 关键源码位置速查表   系统概览Claude Code 的技能发现系统是一个独立于 Proactive 模式的子系统，普通对话模式同样可用。整个系统由编译期 Feature Flag EXPERIMENTAL_SKILL_SEARCH 控制：  外部构建（npm 包）：Flag 为 false，相关代码在打包阶段被死代码消除（DCE），连 &#39;skill_discovery&#39; 字符串字面量都不会出现在产物中。 Anthropic 内部构建：Flag 为 true，完整系统生效。部分功...</div></div></div></a><a class="pagination-related" href="/2026/04/01/claude-code-agent-team-analysis/" title="Claude Code Agent Team 架构分析：Multi-Agent 协作的范式跃迁"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-04-01</div><div class="info-item-2">Claude Code Agent Team 架构分析：Multi-Agent 协作的范式跃迁</div></div><div class="info-2"><div class="info-item-1"> 本文梳理 Claude Code 新增的 Agent Team 功能的核心机制，并与既有 Sub-Agent 体系做结构性对比。目标读者：对 AI 工程架构感兴趣但不一定有编程背景的人。   背景Claude Code 的 Sub-Agent 能力已经相对成熟——给它一个任务，它会在独立进程中并行处理多个子任务，完成后把结果汇回主对话。这套机制在大多数场景下够用。 但有一类任务它处理得不好：子任务之间存在强依赖关系，或需要实时协商。比如你想让 AI 同时负责写文档和写测试，而测试必须基于最新的接口定义——这时候两个 Sub-Agent 的孤立执行就会出问题。它们各自为政，没有任何横向沟通通道。 Agent Team 就是针对这个问题设计的。  架构设计Agent Team 的核心抽象由四个组件构成： Main Agent（队长）：解析用户意图，拆解任务，创建并分配队友，最终汇总交付。 Team Members（队友）：每个队友在独立的上下文窗口中运行，持有自己的”大脑”。这意味着队友 A 写了什么，队友 B 不会自动感知——这是刻意的设计，目的是防止上下文污染。 Mailbox...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/butterfly-icon.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">helson</div><div class="author-info-description">吾生有涯，其知无涯</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">19</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">15</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">0</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/helsome"><i class="fab fa-github"></i><span>GitHub</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/helsome" target="_blank" title="Github"><i class="fab fa-github" style="color: #2A2218;"></i></a></div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#KAIROS-%E6%A8%A1%E5%BC%8F%E4%B8%8E-dream%EF%BC%9AClaude-Code-%E7%9A%84%E4%BB%BF%E7%94%9F%E8%AE%B0%E5%BF%86%E7%B3%BB%E7%BB%9F"><span class="toc-number">1.</span> <span class="toc-text">KAIROS 模式与 &#x2F;dream：Claude Code 的仿生记忆系统</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%9B%AE%E5%BD%95"><span class="toc-number">1.1.</span> <span class="toc-text">目录</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#KAIROS-%E6%98%AF%E4%BB%80%E4%B9%88"><span class="toc-number">1.2.</span> <span class="toc-text">KAIROS 是什么</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Feature-Flag-%E4%BD%93%E7%B3%BB"><span class="toc-number">1.3.</span> <span class="toc-text">Feature Flag 体系</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%97%A5%E6%9C%9F%E8%BF%BD%E5%8A%A0%E5%BC%8F%E6%97%A5%E5%BF%97%EF%BC%9A%E8%AE%B0%E5%BF%86%E7%9A%84%E5%8E%9F%E5%A7%8B%E5%BD%A2%E6%80%81"><span class="toc-number">1.4.</span> <span class="toc-text">日期追加式日志：记忆的原始形态</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#dream-%E6%8A%80%E8%83%BD%EF%BC%9A%E8%92%B8%E9%A6%8F%E8%AE%B0%E5%BF%86%E7%9A%84%E5%B7%A5%E4%BA%BA"><span class="toc-number">1.5.</span> <span class="toc-text">&#x2F;dream 技能：蒸馏记忆的工人</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#autoDream%EF%BC%9A%E8%87%AA%E5%8A%A8%E8%A7%A6%E5%8F%91%E5%BC%95%E6%93%8E"><span class="toc-number">1.6.</span> <span class="toc-text">autoDream：自动触发引擎</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E9%98%B6%E6%AE%B5%E8%92%B8%E9%A6%8F%E6%B5%81%E7%A8%8B"><span class="toc-number">1.7.</span> <span class="toc-text">四阶段蒸馏流程</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Phase-1%EF%BC%9A%E5%AE%9A%E5%90%91%EF%BC%88Orient%EF%BC%89"><span class="toc-number">1.7.1.</span> <span class="toc-text">Phase 1：定向（Orient）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Phase-2%EF%BC%9A%E6%94%B6%E9%9B%86%E8%BF%91%E6%9C%9F%E4%BF%A1%E5%8F%B7%EF%BC%88Gather-Recent-Signal%EF%BC%89"><span class="toc-number">1.7.2.</span> <span class="toc-text">Phase 2：收集近期信号（Gather Recent Signal）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Phase-3%EF%BC%9A%E6%95%B4%E5%90%88%EF%BC%88Consolidate%EF%BC%89"><span class="toc-number">1.7.3.</span> <span class="toc-text">Phase 3：整合（Consolidate）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Phase-4%EF%BC%9A%E7%B2%BE%E7%AE%80%E4%B8%8E%E7%B4%A2%E5%BC%95%EF%BC%88Prune-and-Index%EF%BC%89"><span class="toc-number">1.7.4.</span> <span class="toc-text">Phase 4：精简与索引（Prune and Index）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%A7%A6%E5%8F%91%E9%97%A8%E6%8E%A7%EF%BC%9A%E4%B8%8D%E6%98%AF%E2%80%9D%E5%A4%9C%E9%97%B4%E2%80%9D%E8%80%8C%E6%98%AF%E2%80%9D%E7%A9%BA%E9%97%B2%E8%B6%B3%E5%A4%9F%E4%B9%85%E2%80%9D"><span class="toc-number">1.8.</span> <span class="toc-text">触发门控：不是”夜间”而是”空闲足够久”</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#KAIROS-Agent-%E6%A8%A1%E5%BC%8F%EF%BC%9A%E6%B0%B8%E7%BB%AD%E8%BF%90%E8%A1%8C%E7%9A%84%E8%87%AA%E4%B8%BB%E4%BD%93"><span class="toc-number">1.9.</span> <span class="toc-text">KAIROS Agent 模式：永续运行的自主体</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%8C%E6%95%B4%E5%86%85%E5%AD%98%E6%B5%81%E8%BD%AC%E5%9B%BE"><span class="toc-number">1.10.</span> <span class="toc-text">完整内存流转图</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%B3%E9%94%AE%E6%BA%90%E7%A0%81%E4%BD%8D%E7%BD%AE%E9%80%9F%E6%9F%A5%E8%A1%A8"><span class="toc-number">1.11.</span> <span class="toc-text">关键源码位置速查表</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-number">1.12.</span> <span class="toc-text">总结</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/04/17/claude-code-skill-discovery-mechanism/" title="Claude Code 技能发现机制深度解析">Claude Code 技能发现机制深度解析</a><time datetime="2026-04-16T16:00:00.000Z" title="发表于 2026-04-17 00:00:00">2026-04-17</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/04/17/claude-code-context-compression-system/" title="Claude Code 上下文压缩系统深度解析">Claude Code 上下文压缩系统深度解析</a><time datetime="2026-04-16T16:00:00.000Z" title="发表于 2026-04-17 00:00:00">2026-04-17</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/04/17/kairos-dream-memory-system/" title="KAIROS 模式与 /dream：Claude Code 的仿生记忆系统">KAIROS 模式与 /dream：Claude Code 的仿生记忆系统</a><time datetime="2026-04-16T16:00:00.000Z" title="发表于 2026-04-17 00:00:00">2026-04-17</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/04/03/new-post-1775177623699/" title="新文章标题">新文章标题</a><time datetime="2026-04-02T16:53:43.000Z" title="发表于 2026-04-03 00:53:43">2026-04-03</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/04/01/claude-code-agent-team-analysis/" title="Claude Code Agent Team 架构分析：Multi-Agent 协作的范式跃迁">Claude Code Agent Team 架构分析：Multi-Agent 协作的范式跃迁</a><time datetime="2026-04-01T04:00:00.000Z" title="发表于 2026-04-01 12:00:00">2026-04-01</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2025 - 2026 By helson</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.1</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.4</a></span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.4"></script><script src="/js/main.js?v=5.5.4"></script><div class="js-pjax"></div><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>

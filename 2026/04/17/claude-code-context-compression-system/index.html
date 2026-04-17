@@ -1,0 +1,559 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>Claude Code 上下文压缩系统深度解析 | infinite</title><meta name="author" content="helson"><meta name="copyright" content="helson"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="F8F5EF"><meta name="description" content="Claude Code 上下文压缩系统深度解析 基于源码分析，揭秘 Claude Code 如何通过五层机制让对话”永不超限”。   目录 系统全景 上下文窗口检测 Token 计数机制 第一层：时间触发微压缩 第二层：缓存微压缩（ant 专属） 第三层：自动压缩 第四层：会话记忆压缩 第五层：完全压缩 压缩后的上下文重建 技能内容的跨压缩存活 警告与阻断系统 查询循环中的触发顺序 所有关键常量速">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Claude Code 上下文压缩系统深度解析">
+<meta property="og:url" content="https://helsome.github.io/2026/04/17/claude-code-context-compression-system/index.html">
+<meta property="og:site_name" content="infinite">
+<meta property="og:description" content="Claude Code 上下文压缩系统深度解析 基于源码分析，揭秘 Claude Code 如何通过五层机制让对话”永不超限”。   目录 系统全景 上下文窗口检测 Token 计数机制 第一层：时间触发微压缩 第二层：缓存微压缩（ant 专属） 第三层：自动压缩 第四层：会话记忆压缩 第五层：完全压缩 压缩后的上下文重建 技能内容的跨压缩存活 警告与阻断系统 查询循环中的触发顺序 所有关键常量速">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://helsome.github.io/img/butterfly-icon.png">
+<meta property="article:published_time" content="2026-04-16T16:00:00.000Z">
+<meta property="article:modified_time" content="2026-04-17T04:48:13.220Z">
+<meta property="article:author" content="helson">
+<meta property="article:tag" content="AI">
+<meta property="article:tag" content="Claude Code">
+<meta property="article:tag" content="上下文管理">
+<meta property="article:tag" content="源码分析">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://helsome.github.io/img/butterfly-icon.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Claude Code 上下文压缩系统深度解析",
+  "url": "https://helsome.github.io/2026/04/17/claude-code-context-compression-system/",
+  "image": "https://helsome.github.io/img/butterfly-icon.png",
+  "datePublished": "2026-04-16T16:00:00.000Z",
+  "dateModified": "2026-04-17T04:48:13.220Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "helson",
+      "url": "https://helsome.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://helsome.github.io/2026/04/17/claude-code-context-compression-system/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//fonts.googleapis.com" crossorigin=""/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.4"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', 'F8F5EF')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&amp;display=swap" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.13.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'Claude Code 上下文压缩系统深度解析',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="/css/custom.css"><meta name="generator" content="Hexo 8.1.1"></head><body><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">infinite</span></a><a class="nav-page-title" href="/"><span class="site-name">Claude Code 上下文压缩系统深度解析</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">Claude Code 上下文压缩系统深度解析</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-04-16T16:00:00.000Z" title="发表于 2026-04-17 00:00:00">2026-04-17</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-04-17T04:48:13.220Z" title="更新于 2026-04-17 12:48:13">2026-04-17</time></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div><article class="container post-content" id="article-container"><h1 id="Claude-Code-上下文压缩系统深度解析"><a href="#Claude-Code-上下文压缩系统深度解析" class="headerlink" title="Claude Code 上下文压缩系统深度解析"></a>Claude Code 上下文压缩系统深度解析</h1><blockquote>
+<p>基于源码分析，揭秘 Claude Code 如何通过五层机制让对话”永不超限”。</p>
+</blockquote>
+<hr>
+<h2 id="目录"><a href="#目录" class="headerlink" title="目录"></a>目录</h2><ol>
+<li><a href="#%E7%B3%BB%E7%BB%9F%E5%85%A8%E6%99%AF">系统全景</a></li>
+<li><a href="#%E4%B8%8A%E4%B8%8B%E6%96%87%E7%AA%97%E5%8F%A3%E6%A3%80%E6%B5%8B">上下文窗口检测</a></li>
+<li><a href="#token-%E8%AE%A1%E6%95%B0%E6%9C%BA%E5%88%B6">Token 计数机制</a></li>
+<li><a href="#%E7%AC%AC%E4%B8%80%E5%B1%82%E6%97%B6%E9%97%B4%E8%A7%A6%E5%8F%91%E5%BE%AE%E5%8E%8B%E7%BC%A9">第一层：时间触发微压缩</a></li>
+<li><a href="#%E7%AC%AC%E4%BA%8C%E5%B1%82%E7%BC%93%E5%AD%98%E5%BE%AE%E5%8E%8B%E7%BC%A9ant-%E4%B8%93%E5%B1%9E">第二层：缓存微压缩（ant 专属）</a></li>
+<li><a href="#%E7%AC%AC%E4%B8%89%E5%B1%82%E8%87%AA%E5%8A%A8%E5%8E%8B%E7%BC%A9">第三层：自动压缩</a></li>
+<li><a href="#%E7%AC%AC%E5%9B%9B%E5%B1%82%E4%BC%9A%E8%AF%9D%E8%AE%B0%E5%BF%86%E5%8E%8B%E7%BC%A9">第四层：会话记忆压缩</a></li>
+<li><a href="#%E7%AC%AC%E4%BA%94%E5%B1%82%E5%AE%8C%E5%85%A8%E5%8E%8B%E7%BC%A9">第五层：完全压缩</a></li>
+<li><a href="#%E5%8E%8B%E7%BC%A9%E5%90%8E%E7%9A%84%E4%B8%8A%E4%B8%8B%E6%96%87%E9%87%8D%E5%BB%BA">压缩后的上下文重建</a></li>
+<li><a href="#%E6%8A%80%E8%83%BD%E5%86%85%E5%AE%B9%E7%9A%84%E8%B7%A8%E5%8E%8B%E7%BC%A9%E5%AD%98%E6%B4%BB">技能内容的跨压缩存活</a></li>
+<li><a href="#%E8%AD%A6%E5%91%8A%E4%B8%8E%E9%98%BB%E6%96%AD%E7%B3%BB%E7%BB%9F">警告与阻断系统</a></li>
+<li><a href="#%E6%9F%A5%E8%AF%A2%E5%BE%AA%E7%8E%AF%E4%B8%AD%E7%9A%84%E8%A7%A6%E5%8F%91%E9%A1%BA%E5%BA%8F">查询循环中的触发顺序</a></li>
+<li><a href="#%E6%89%80%E6%9C%89%E5%85%B3%E9%94%AE%E5%B8%B8%E9%87%8F%E9%80%9F%E6%9F%A5%E8%A1%A8">所有关键常量速查表</a></li>
+</ol>
+<hr>
+<h2 id="系统全景"><a href="#系统全景" class="headerlink" title="系统全景"></a>系统全景</h2><p>所有 LLM 都有上下文窗口限制。Claude Code 的解法不是单一机制，而是<strong>五层递进式压缩架构</strong>，按照代价从低到高依次尝试：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">Token 压力上升</span><br><span class="line">     │</span><br><span class="line">     ▼</span><br><span class="line">[层一] 时间触发微压缩     ← 检测服务端缓存已冷，清空旧工具结果</span><br><span class="line">     │</span><br><span class="line">     ▼</span><br><span class="line">[层二] 缓存微压缩         ← 通过 API cache_edits 在服务端静默删除（ant 专属）</span><br><span class="line">     │</span><br><span class="line">     ▼</span><br><span class="line">[层三] 自动压缩           ← Token 超过阈值时触发，带熔断器</span><br><span class="line">     │</span><br><span class="line">     ▼</span><br><span class="line">[层四] 会话记忆压缩       ← 利用已有运行时摘要，无需额外 API 调用</span><br><span class="line">     │</span><br><span class="line">     ▼</span><br><span class="line">[层五] 完全压缩           ← fork 子 Agent，让 AI 总结整段对话</span><br></pre></td></tr></table></figure>
+
+<p>相关文件分布在 <code>src/services/compact/</code> 目录下：</p>
+<table>
+<thead>
+<tr>
+<th>文件</th>
+<th>职责</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>compact.ts</code></td>
+<td>核心压缩逻辑（~1700 行）</td>
+</tr>
+<tr>
+<td><code>autoCompact.ts</code></td>
+<td>自动压缩阈值、熔断器</td>
+</tr>
+<tr>
+<td><code>microCompact.ts</code></td>
+<td>微压缩（时间触发 + 缓存路径）</td>
+</tr>
+<tr>
+<td><code>apiMicrocompact.ts</code></td>
+<td>API 原生上下文管理（ant 专属）</td>
+</tr>
+<tr>
+<td><code>sessionMemoryCompact.ts</code></td>
+<td>会话记忆压缩</td>
+</tr>
+<tr>
+<td><code>prompt.ts</code></td>
+<td><code>NO_TOOLS_PREAMBLE</code>、总结提示词</td>
+</tr>
+<tr>
+<td><code>grouping.ts</code></td>
+<td>API 轮次分组（用于 PTL 重试）</td>
+</tr>
+<tr>
+<td><code>compactWarningState.ts</code></td>
+<td>警告抑制状态</td>
+</tr>
+<tr>
+<td><code>postCompactCleanup.ts</code></td>
+<td>压缩后缓存重置</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="上下文窗口检测"><a href="#上下文窗口检测" class="headerlink" title="上下文窗口检测"></a>上下文窗口检测</h2><p><strong>文件：<code>src/utils/context.ts</code></strong></p>
+<p>Claude Code 通过多重检测确定当前模型的上下文窗口大小（第 51–98 行）：</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="keyword">const</span> <span class="variable constant_">MODEL_CONTEXT_WINDOW_DEFAULT</span> = <span class="number">200_000</span>  <span class="comment">// 默认 200K</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">export</span> <span class="keyword">function</span> <span class="title function_">getContextWindowForModel</span>(<span class="params"><span class="attr">model</span>: <span class="built_in">string</span>, <span class="attr">betas</span>?: <span class="built_in">string</span>[]</span>): <span class="built_in">number</span> &#123;</span><br><span class="line">  <span class="comment">// 1. ant 内部环境变量覆盖（最高优先级）</span></span><br><span class="line">  <span class="keyword">if</span> (process.<span class="property">env</span>.<span class="property">USER_TYPE</span> === <span class="string">&#x27;ant&#x27;</span> &amp;&amp; process.<span class="property">env</span>.<span class="property">CLAUDE_CODE_MAX_CONTEXT_TOKENS</span>) &#123;</span><br><span class="line">    <span class="keyword">const</span> <span class="keyword">override</span> = <span class="built_in">parseInt</span>(process.<span class="property">env</span>.<span class="property">CLAUDE_CODE_MAX_CONTEXT_TOKENS</span>, <span class="number">10</span>)</span><br><span class="line">    <span class="keyword">if</span> (!<span class="built_in">isNaN</span>(<span class="keyword">override</span>) &amp;&amp; <span class="keyword">override</span> &gt; <span class="number">0</span>) <span class="keyword">return</span> <span class="keyword">override</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 2. 模型名称含 [1m] 后缀 → 1M 上下文</span></span><br><span class="line">  <span class="keyword">if</span> (<span class="title function_">has1mContext</span>(model)) <span class="keyword">return</span> <span class="number">1_000_000</span></span><br><span class="line"></span><br><span class="line">  <span class="comment">// 3. 模型能力注册表</span></span><br><span class="line">  <span class="keyword">const</span> cap = <span class="title function_">getModelCapability</span>(model)</span><br><span class="line">  <span class="keyword">if</span> (cap?.<span class="property">max_input_tokens</span> &amp;&amp; cap.<span class="property">max_input_tokens</span> &gt;= <span class="number">100_000</span>) &#123;</span><br><span class="line">    <span class="keyword">if</span> (cap.<span class="property">max_input_tokens</span> &gt; <span class="variable constant_">MODEL_CONTEXT_WINDOW_DEFAULT</span> &amp;&amp; <span class="title function_">is1mContextDisabled</span>())</span><br><span class="line">      <span class="keyword">return</span> <span class="variable constant_">MODEL_CONTEXT_WINDOW_DEFAULT</span></span><br><span class="line">    <span class="keyword">return</span> cap.<span class="property">max_input_tokens</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 4. 1M Beta Header + 支持的模型</span></span><br><span class="line">  <span class="keyword">if</span> (betas?.<span class="title function_">includes</span>(<span class="variable constant_">CONTEXT_1M_BETA_HEADER</span>) &amp;&amp; <span class="title function_">modelSupports1M</span>(model))</span><br><span class="line">    <span class="keyword">return</span> <span class="number">1_000_000</span></span><br><span class="line"></span><br><span class="line">  <span class="comment">// 5. GrowthBook 实验：Sonnet 4.6 获得 1M</span></span><br><span class="line">  <span class="keyword">if</span> (<span class="title function_">getSonnet1mExpTreatmentEnabled</span>(model)) <span class="keyword">return</span> <span class="number">1_000_000</span></span><br><span class="line"></span><br><span class="line">  <span class="comment">// 6. ant 内部模型注册表</span></span><br><span class="line">  <span class="keyword">if</span> (process.<span class="property">env</span>.<span class="property">USER_TYPE</span> === <span class="string">&#x27;ant&#x27;</span>) &#123;</span><br><span class="line">    <span class="keyword">const</span> antModel = <span class="title function_">resolveAntModel</span>(model)</span><br><span class="line">    <span class="keyword">if</span> (antModel?.<span class="property">contextWindow</span>) <span class="keyword">return</span> antModel.<span class="property">contextWindow</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> <span class="variable constant_">MODEL_CONTEXT_WINDOW_DEFAULT</span>  <span class="comment">// 兜底：200K</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>压缩系统使用的是<strong>有效上下文窗口</strong>，需减去为总结输出预留的 token（<code>autoCompact.ts</code> 第 28–49 行）：</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> <span class="variable constant_">MAX_OUTPUT_TOKENS_FOR_SUMMARY</span> = <span class="number">20_000</span>  <span class="comment">// p99.99 实测为 17,387 tokens</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">export</span> <span class="keyword">function</span> <span class="title function_">getEffectiveContextWindowSize</span>(<span class="params"><span class="attr">model</span>: <span class="built_in">string</span></span>): <span class="built_in">number</span> &#123;</span><br><span class="line">  <span class="keyword">const</span> reservedTokensForSummary = <span class="title class_">Math</span>.<span class="title function_">min</span>(</span><br><span class="line">    <span class="title function_">getMaxOutputTokensForModel</span>(model),</span><br><span class="line">    <span class="variable constant_">MAX_OUTPUT_TOKENS_FOR_SUMMARY</span>,</span><br><span class="line">  )</span><br><span class="line">  <span class="keyword">let</span> contextWindow = <span class="title function_">getContextWindowForModel</span>(model, <span class="title function_">getSdkBetas</span>())</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 测试用环境变量覆盖</span></span><br><span class="line">  <span class="keyword">const</span> autoCompactWindow = process.<span class="property">env</span>.<span class="property">CLAUDE_CODE_AUTO_COMPACT_WINDOW</span></span><br><span class="line">  <span class="keyword">if</span> (autoCompactWindow) &#123;</span><br><span class="line">    <span class="keyword">const</span> parsed = <span class="built_in">parseInt</span>(autoCompactWindow, <span class="number">10</span>)</span><br><span class="line">    <span class="keyword">if</span> (!<span class="built_in">isNaN</span>(parsed) &amp;&amp; parsed &gt; <span class="number">0</span>) contextWindow = <span class="title class_">Math</span>.<span class="title function_">min</span>(contextWindow, parsed)</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> contextWindow - reservedTokensForSummary</span><br><span class="line">  <span class="comment">// 标准 200K 模型：180,000</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="Token-计数机制"><a href="#Token-计数机制" class="headerlink" title="Token 计数机制"></a>Token 计数机制</h2><p><strong>文件：<code>src/utils/tokens.ts</code></strong></p>
+<p>系统使用两种计数策略：</p>
+<h3 id="精确计数（基于-API-返回值）"><a href="#精确计数（基于-API-返回值）" class="headerlink" title="精确计数（基于 API 返回值）"></a>精确计数（基于 API 返回值）</h3><p><code>tokenCountWithEstimation()</code>（第 226–261 行）：从最近一次 API 响应的 <code>usage</code> 字段读取精确值，再加上此后新增消息的估算值：</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 从 usage 中读取的字段</span></span><br><span class="line"><span class="title function_">getTokenCountFromUsage</span>(usage) =</span><br><span class="line">  input_tokens +</span><br><span class="line">  cache_creation_input_tokens +  <span class="comment">// 缓存创建消耗</span></span><br><span class="line">  cache_read_input_tokens +       <span class="comment">// 缓存读取消耗</span></span><br><span class="line">  output_tokens                   <span class="comment">// 输出消耗</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 此后新增消息的粗估</span></span><br><span class="line">+ <span class="title function_">roughTokenCountEstimationForMessages</span>(messages.<span class="title function_">slice</span>(i + <span class="number">1</span>))</span><br></pre></td></tr></table></figure>
+
+<p>注意：token 计数<strong>包含缓存消耗</strong>，这是正确的——缓存内容虽然便宜，但确实占据了上下文窗口。</p>
+<h3 id="粗略估算（无-API-调用）"><a href="#粗略估算（无-API-调用）" class="headerlink" title="粗略估算（无 API 调用）"></a>粗略估算（无 API 调用）</h3><p><code>roughTokenCountEstimation()</code>（<code>src/services/tokenEstimation.ts</code> 第 203 行）：</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="title class_">Math</span>.<span class="title function_">round</span>(content.<span class="property">length</span> / <span class="number">4</span>)  <span class="comment">// 每 4 字节约等于 1 个 token</span></span><br></pre></td></tr></table></figure>
+
+<p>更精确时可调用 <code>countMessagesTokensWithAPI</code>，使用 <code>anthropic.beta.messages.countTokens(...)</code>。若主路径失败，兜底为 <code>countTokensViaHaikuFallback</code>——真实发起一个 <code>max_tokens: 1</code> 的 Haiku API 调用，从返回的 <code>usage</code> 中读取实际 token 数。</p>
+<hr>
+<h2 id="第一层：时间触发微压缩"><a href="#第一层：时间触发微压缩" class="headerlink" title="第一层：时间触发微压缩"></a>第一层：时间触发微压缩</h2><p><strong>文件：<code>src/services/compact/microCompact.ts</code></strong></p>
+<h3 id="设计动机"><a href="#设计动机" class="headerlink" title="设计动机"></a>设计动机</h3><p>Anthropic API 的 Prompt Cache TTL 约为 <strong>60 分钟</strong>。超时后，服务端缓存失效，所有历史工具结果都需要重新发送。此时已有大量 token 被”无效”内容占用——何不趁机清空？</p>
+<h3 id="触发条件"><a href="#触发条件" class="headerlink" title="触发条件"></a>触发条件</h3><figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 第 446–530 行</span></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">maybeTimeBasedMicrocompact</span>(<span class="params">messages, querySource</span>): <span class="title class_">MicrocompactResult</span> | <span class="literal">null</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 触发：距上次 assistant 消息 &gt; gapThresholdMinutes（默认 60 分钟）</span></span><br><span class="line"><span class="comment">// 配置来源：GrowthBook 标志 tengu_slate_heron</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="执行动作"><a href="#执行动作" class="headerlink" title="执行动作"></a>执行动作</h3><ol>
+<li>保留最近 <code>keepRecent</code>（默认 5 个）可压缩工具结果</li>
+<li>其余旧工具结果内容替换为：</li>
+</ol>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="keyword">const</span> <span class="variable constant_">TIME_BASED_MC_CLEARED_MESSAGE</span> = <span class="string">&#x27;[Old tool result content cleared]&#x27;</span></span><br><span class="line"><span class="comment">// 文件：microCompact.ts 第 36 行</span></span><br><span class="line"><span class="comment">// 也定义于：src/utils/toolResultStorage.ts 第 34 行（两处内容保持一致，由测试保障）</span></span><br></pre></td></tr></table></figure>
+
+<ol start="3">
+<li>调用 <code>resetMicrocompactState()</code> 清空缓存-MC 状态</li>
+</ol>
+<p><strong>可被压缩的工具类型</strong>：<code>file_read</code>、Bash&#x2F;shell 工具、<code>grep</code>、<code>glob</code>、<code>web_search</code>、<code>web_fetch</code>、<code>file_edit</code>、<code>file_write</code>。</p>
+<p><strong>关键细节</strong>：时间触发微压缩<strong>直接修改本地消息数组</strong>。因为缓存已冷，不存在服务端缓存失效问题。</p>
+<hr>
+<h2 id="第二层：缓存微压缩（ant-专属）"><a href="#第二层：缓存微压缩（ant-专属）" class="headerlink" title="第二层：缓存微压缩（ant 专属）"></a>第二层：缓存微压缩（ant 专属）</h2><p><strong>文件：<code>src/services/compact/microCompact.ts</code>，第 305–399 行</strong></p>
+<p>功能标志：<code>CACHED_MICROCOMPACT</code>（仅 Anthropic 内部）</p>
+<h3 id="与第一层的本质区别"><a href="#与第一层的本质区别" class="headerlink" title="与第一层的本质区别"></a>与第一层的本质区别</h3><p>时间触发微压缩修改<strong>本地消息</strong>；缓存微压缩发送 <code>cache_edits</code> 指令到<strong>服务端</strong>，在不破坏缓存前缀的前提下静默删除旧内容。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">普通清空：本地改 → 下次发送时服务端缓存全部失效（昂贵）</span><br><span class="line">缓存编辑：发送 cache_edits → 服务端删除指定条目 → 缓存前缀完好（便宜）</span><br></pre></td></tr></table></figure>
+
+<p><code>consumePendingCacheEdits()</code> 在每次 API 请求前被 <code>claude.ts</code> 调用，将待处理的编辑指令附加到请求中。</p>
+<h3 id="外部用户的降级"><a href="#外部用户的降级" class="headerlink" title="外部用户的降级"></a>外部用户的降级</h3><figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 第 288–292 行注释</span></span><br><span class="line"><span class="comment">// Legacy microcompact path removed — tengu_cache_plum_violet is always true.</span></span><br><span class="line"><span class="comment">// For contexts where cached microcompact is not available (external builds,</span></span><br><span class="line"><span class="comment">// non-ant users, unsupported models, sub-agents), no compaction happens here;</span></span><br><span class="line"><span class="comment">// autocompact handles context pressure instead.</span></span><br><span class="line"><span class="keyword">return</span> &#123; messages &#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>对外部用户而言，前两层微压缩均不生效</strong>，上下文压力完全由第三层自动压缩处理。</p>
+<hr>
+<h2 id="第三层：自动压缩"><a href="#第三层：自动压缩" class="headerlink" title="第三层：自动压缩"></a>第三层：自动压缩</h2><p><strong>文件：<code>src/services/compact/autoCompact.ts</code></strong></p>
+<h3 id="触发阈值的精确计算"><a href="#触发阈值的精确计算" class="headerlink" title="触发阈值的精确计算"></a>触发阈值的精确计算</h3><p>“87%”并非代码中的字面常量，而是从 buffer 减法推导而来：</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="keyword">const</span> <span class="variable constant_">AUTOCOMPACT_BUFFER_TOKENS</span> = <span class="number">13_000</span>   <span class="comment">// 第 62 行</span></span><br><span class="line"><span class="keyword">export</span> <span class="keyword">const</span> <span class="variable constant_">MAX_OUTPUT_TOKENS_FOR_SUMMARY</span> = <span class="number">20_000</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 对于标准 200K 模型：</span></span><br><span class="line">effectiveWindow = <span class="number">200</span>,<span class="number">000</span> - <span class="number">20</span>,<span class="number">000</span> = <span class="number">180</span>,<span class="number">000</span></span><br><span class="line">threshold = <span class="number">180</span>,<span class="number">000</span> - <span class="number">13</span>,<span class="number">000</span> = <span class="number">167</span>,<span class="number">000</span></span><br><span class="line"><span class="comment">// 占原始窗口的 83.5%，占有效窗口的 92.8%</span></span><br></pre></td></tr></table></figure>
+
+<p>可通过环境变量 <code>CLAUDE_AUTOCOMPACT_PCT_OVERRIDE</code>（百分比）覆盖阈值。</p>
+<h3 id="熔断器：三次失败停止"><a href="#熔断器：三次失败停止" class="headerlink" title="熔断器：三次失败停止"></a>熔断器：三次失败停止</h3><figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 第 70 行</span></span><br><span class="line"><span class="keyword">const</span> <span class="variable constant_">MAX_CONSECUTIVE_AUTOCOMPACT_FAILURES</span> = <span class="number">3</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 来自代码注释（BigQuery 数据，2026-03-10）：</span></span><br><span class="line"><span class="comment">// &quot;1,279 个会话出现了 50+ 次连续失败（最多 3,272 次），</span></span><br><span class="line"><span class="comment">//  每天全局浪费约 250K 次 API 调用。&quot;</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 第 257–265 行</span></span><br><span class="line"><span class="keyword">if</span> (tracking?.<span class="property">consecutiveFailures</span> &gt;= <span class="variable constant_">MAX_CONSECUTIVE_AUTOCOMPACT_FAILURES</span>) &#123;</span><br><span class="line">  <span class="keyword">return</span> &#123; <span class="attr">wasCompacted</span>: <span class="literal">false</span> &#125;  <span class="comment">// 本 session 永久停止尝试</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>成功时 <code>consecutiveFailures</code> 重置为 0；失败时递增。三次失败后该 session 不再尝试自动压缩。</p>
+<h3 id="完整触发决策链"><a href="#完整触发决策链" class="headerlink" title="完整触发决策链"></a>完整触发决策链</h3><p>自动压缩在以下情况下<strong>跳过</strong>（<code>autoCompact.ts</code> 第 160–239 行）：</p>
+<ol>
+<li><code>querySource === &#39;session_memory&#39;</code> 或 <code>&#39;compact&#39;</code>（递归防护）</li>
+<li><code>querySource === &#39;marble_origami&#39;</code>（上下文折叠 Agent，<code>CONTEXT_COLLAPSE</code> 特性开启时）</li>
+<li>设置了 <code>DISABLE_COMPACT</code> 或 <code>DISABLE_AUTO_COMPACT</code> 环境变量</li>
+<li>用户配置 <code>autoCompactEnabled === false</code></li>
+<li><code>REACTIVE_COMPACT</code> 特性 + <code>tengu_cobalt_raccoon</code> 标志为 true（响应式专属模式）</li>
+<li><code>CONTEXT_COLLAPSE</code> 特性开启且 <code>isContextCollapseEnabled()</code> 为 true</li>
+<li>最终检查：<code>tokenCountWithEstimation(messages) - snipTokensFreed &gt;= threshold</code></li>
+</ol>
+<hr>
+<h2 id="第四层：会话记忆压缩"><a href="#第四层：会话记忆压缩" class="headerlink" title="第四层：会话记忆压缩"></a>第四层：会话记忆压缩</h2><p><strong>文件：<code>src/services/compact/sessionMemoryCompact.ts</code></strong></p>
+<p>这是完全压缩的<strong>轻量替代方案</strong>：利用后台维护的运行时摘要，无需额外的 API 调用来生成总结。</p>
+<h3 id="默认配置"><a href="#默认配置" class="headerlink" title="默认配置"></a>默认配置</h3><figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="keyword">const</span> <span class="variable constant_">DEFAULT_SM_COMPACT_CONFIG</span> = &#123;</span><br><span class="line">  <span class="attr">minTokens</span>: <span class="number">10_000</span>,          <span class="comment">// 保留消息的最小 token 数</span></span><br><span class="line">  <span class="attr">minTextBlockMessages</span>: <span class="number">5</span>,    <span class="comment">// 保留包含文本的最少消息数</span></span><br><span class="line">  <span class="attr">maxTokens</span>: <span class="number">40_000</span>,          <span class="comment">// 保留消息的硬上限</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 可通过 GrowthBook tengu_sm_compact_config 远程调整</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="工作原理"><a href="#工作原理" class="headerlink" title="工作原理"></a>工作原理</h3><ol>
+<li>找到 <code>lastSummarizedMessageId</code>（会话记忆系统最近已总结到的消息）</li>
+<li>保留从该消息点到当前的消息（必要时向前扩展以满足最小阈值）</li>
+<li>使用已有的会话记忆内容作为历史摘要</li>
+<li><strong>无需调用 API 生成摘要</strong></li>
+</ol>
+<h3 id="安全门控"><a href="#安全门控" class="headerlink" title="安全门控"></a>安全门控</h3><p>如果压缩后（摘要 + 保留消息）的 token 数仍超过自动压缩阈值，则返回 <code>null</code>，回退到完全压缩。</p>
+<p><strong>启用条件</strong>：GrowthBook 标志 <code>tengu_session_memory</code> 和 <code>tengu_sm_compact</code> 同时为 true，或设置了 <code>ENABLE_CLAUDE_CODE_SM_COMPACT</code> 环境变量。</p>
+<hr>
+<h2 id="第五层：完全压缩"><a href="#第五层：完全压缩" class="headerlink" title="第五层：完全压缩"></a>第五层：完全压缩</h2><p><strong>文件：<code>src/services/compact/compact.ts</code>（~1700 行）</strong></p>
+<h3 id="NO-TOOLS-PREAMBLE：为什么这么严厉"><a href="#NO-TOOLS-PREAMBLE：为什么这么严厉" class="headerlink" title="NO_TOOLS_PREAMBLE：为什么这么严厉"></a>NO_TOOLS_PREAMBLE：为什么这么严厉</h3><p><strong>文件：<code>src/services/compact/prompt.ts</code>，第 19–26 行</strong></p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> <span class="variable constant_">NO_TOOLS_PREAMBLE</span> = <span class="string">`CRITICAL: Respond with TEXT ONLY. Do NOT call any tools.</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">- Do NOT use Read, Bash, Grep, Glob, Edit, Write, or ANY other tool.</span></span><br><span class="line"><span class="string">- You already have all the context you need in the conversation above.</span></span><br><span class="line"><span class="string">- Tool calls will be REJECTED and will waste your only turn — you will fail the task.</span></span><br><span class="line"><span class="string">- Your entire response must be plain text: an &lt;analysis&gt; block followed by a &lt;summary&gt; block.</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">`</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 还有结尾重申（第 269–272 行）</span></span><br><span class="line"><span class="keyword">const</span> <span class="variable constant_">NO_TOOLS_TRAILER</span> =</span><br><span class="line">  <span class="string">&#x27;\n\nREMINDER: Do NOT call any tools. Respond with plain text only — &#x27;</span> +</span><br><span class="line">  <span class="string">&#x27;an &lt;analysis&gt; block followed by a &lt;summary&gt; block. &#x27;</span> +</span><br><span class="line">  <span class="string">&#x27;Tool calls will be rejected and you will fail the task.&#x27;</span></span><br></pre></td></tr></table></figure>
+
+<p>代码注释（第 12–18 行）解释了为什么措辞如此强硬：</p>
+<blockquote>
+<p>“在 Sonnet 4.6+ 自适应思考模型上，即使有较弱的指令，模型有时仍会尝试工具调用。使用 <code>maxTurns: 1</code> 的缓存共享 fork 路径时，被拒绝的工具调用意味着没有文本输出 → 触发流式降级（4.6 上失败率 2.79%，4.5 上仅 0.01%）。”</p>
+</blockquote>
+<p>API 层同样强制执行（<code>compact.ts</code> 第 1125–1134 行）：</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="keyword">function</span> <span class="title function_">createCompactCanUseTool</span>(<span class="params"></span>): <span class="title class_">CanUseToolFn</span> &#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="title function_">async</span> () =&gt; (&#123;</span><br><span class="line">    <span class="attr">behavior</span>: <span class="string">&#x27;deny&#x27;</span> <span class="keyword">as</span> <span class="keyword">const</span>,</span><br><span class="line">    <span class="attr">message</span>: <span class="string">&#x27;Tool use is not allowed during compaction&#x27;</span>,</span><br><span class="line">    <span class="attr">decisionReason</span>: &#123;</span><br><span class="line">      <span class="attr">type</span>: <span class="string">&#x27;other&#x27;</span> <span class="keyword">as</span> <span class="keyword">const</span>,</span><br><span class="line">      <span class="attr">reason</span>: <span class="string">&#x27;compaction agent should only produce text summary&#x27;</span>,</span><br><span class="line">    &#125;,</span><br><span class="line">  &#125;)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="草稿模式"><a href="#草稿模式" class="headerlink" title="&lt;analysis&gt; 草稿模式"></a><code>&lt;analysis&gt;</code> 草稿模式</h3><p>压缩提示词要求模型先写 <code>&lt;analysis&gt;</code> 块（思考草稿，提升总结质量），再写 <code>&lt;summary&gt;</code> 块。生成完成后，<code>formatCompactSummary()</code> <strong>完全删除 analysis 块</strong>，只保留 summary 注入回上下文。</p>
+<h3 id="9-节总结提示词"><a href="#9-节总结提示词" class="headerlink" title="9 节总结提示词"></a>9 节总结提示词</h3><p>压缩提示词要求总结以下 9 个方面：</p>
+<ol>
+<li>主要请求与意图</li>
+<li>关键技术概念</li>
+<li>文件和代码段（含完整代码片段）</li>
+<li>错误及修复方案</li>
+<li>问题解决过程</li>
+<li>所有用户消息</li>
+<li>待处理任务</li>
+<li>当前工作状态</li>
+<li>可选的下一步（含最近对话的直接引用）</li>
+</ol>
+<h3 id="双路径流式架构"><a href="#双路径流式架构" class="headerlink" title="双路径流式架构"></a>双路径流式架构</h3><p><strong>路径 A：缓存共享 fork（默认）</strong></p>
+<p>由 GrowthBook 标志 <code>tengu_compact_cache_prefix</code>（默认 <code>true</code>）控制，通过 <code>runForkedAgent</code> 运行，继承主对话的缓存前缀。</p>
+<ul>
+<li>不设置 <code>maxOutputTokens</code>（设置会导致 thinking 配置分歧，破坏缓存键）</li>
+<li><code>skipCacheWrite: true</code>，防止总结过程污染缓存</li>
+</ul>
+<p><strong>路径 B：直接流式降级</strong></p>
+<p>路径 A 失败时使用。设置 <code>maxOutputTokensOverride: Math.min(20_000, getMaxOutputTokensForModel(...))</code>。工具仅提供 <code>[FileReadTool]</code>（若启用工具搜索则额外提供 <code>ToolSearchTool</code> 和 MCP 工具）。</p>
+<h3 id="PTL（Prompt-Too-Long）重试"><a href="#PTL（Prompt-Too-Long）重试" class="headerlink" title="PTL（Prompt Too Long）重试"></a>PTL（Prompt Too Long）重试</h3><p>压缩调用本身也可能超限。遇到 <code>prompt_too_long</code> 错误时：</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> <span class="variable constant_">MAX_PTL_RETRIES</span> = <span class="number">3</span>  <span class="comment">// compact.ts 第 227 行</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// truncateHeadForPTLRetry:</span></span><br><span class="line"><span class="comment">// 按 API 轮次分组（groupMessagesByApiRound），</span></span><br><span class="line"><span class="comment">// 从最旧的组开始删除，直到腾出足够空间</span></span><br><span class="line"><span class="comment">// 若错误中含 tokenGap，精确删除；否则删除约 20% 的消息</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="摘要注入回上下文的格式"><a href="#摘要注入回上下文的格式" class="headerlink" title="摘要注入回上下文的格式"></a>摘要注入回上下文的格式</h3><p><code>getCompactUserSummaryMessage()</code>（<code>prompt.ts</code> 第 337 行）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">This session is being continued from a previous conversation that ran out of context.</span><br><span class="line">The summary below covers the earlier portion of the conversation.</span><br><span class="line"></span><br><span class="line">Summary:</span><br><span class="line">[格式化后的总结内容]</span><br><span class="line"></span><br><span class="line">If you need specific details from before compaction (like exact code snippets, error messages,</span><br><span class="line">or content you generated), read the full transcript at: [transcriptPath]</span><br></pre></td></tr></table></figure>
+
+<p>若为自动压缩（非用户手动触发），还会追加：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Continue the conversation from where it left off without asking the user any further questions.</span><br><span class="line">Resume directly — do not acknowledge the summary, do not recap what was happening,</span><br><span class="line">do not preface with &#x27;I&#x27;ll continue&#x27; or similar.</span><br><span class="line">Pick up the last task as if the break never happened.</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="压缩后的上下文重建"><a href="#压缩后的上下文重建" class="headerlink" title="压缩后的上下文重建"></a>压缩后的上下文重建</h2><p>压缩完成后，<code>buildPostCompactMessages()</code> 按严格顺序重建上下文（第 330–338 行）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">boundaryMarker</span><br><span class="line">  → summaryMessages（AI 生成的历史摘要）</span><br><span class="line">  → messagesToKeep（压缩边界后保留的最近消息）</span><br><span class="line">  → attachments（按以下顺序）</span><br></pre></td></tr></table></figure>
+
+<p><strong>Attachments 注入顺序</strong>（<code>compactConversation</code> 函数）：</p>
+<ol>
+<li><strong>文件重读</strong>（最多 5 个，总计 ≤50K tokens，每个 ≤5K）</li>
+<li><strong>异步 Agent 状态消息</strong></li>
+<li><strong>Plan 文件 attachment</strong>（若处于 plan 模式）</li>
+<li><strong>Plan 模式指令</strong></li>
+<li><strong>已调用技能内容</strong>（若本 session 使用过技能）</li>
+<li><strong>工具集 delta</strong>（<code>callSite: &#39;compact_full&#39;</code>，从头重新声明全部工具）</li>
+<li><strong>Agent 列表 delta</strong></li>
+<li><strong>MCP 指令 delta</strong></li>
+<li><strong>SessionStart hook 结果</strong>（CLAUDE.md 重新注入等）</li>
+</ol>
+<hr>
+<h2 id="技能内容的跨压缩存活"><a href="#技能内容的跨压缩存活" class="headerlink" title="技能内容的跨压缩存活"></a>技能内容的跨压缩存活</h2><p><strong>文件：<code>src/bootstrap/state.ts</code>，第 1500–1540 行</strong></p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="keyword">type</span> <span class="title class_">InvokedSkillInfo</span> = &#123;</span><br><span class="line">  <span class="attr">skillName</span>: <span class="built_in">string</span></span><br><span class="line">  <span class="attr">skillPath</span>: <span class="built_in">string</span></span><br><span class="line">  <span class="attr">content</span>: <span class="built_in">string</span>      <span class="comment">// 完整处理后的技能内容（含基础目录头 + 变量替换）</span></span><br><span class="line">  <span class="attr">invokedAt</span>: <span class="built_in">number</span>    <span class="comment">// 时间戳（用于按近期排序）</span></span><br><span class="line">  <span class="attr">agentId</span>: <span class="built_in">string</span> | <span class="literal">null</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">export</span> <span class="keyword">function</span> <span class="title function_">addInvokedSkill</span>(<span class="params"></span></span><br><span class="line"><span class="params">  <span class="attr">skillName</span>: <span class="built_in">string</span>, <span class="attr">skillPath</span>: <span class="built_in">string</span>, <span class="attr">content</span>: <span class="built_in">string</span>, <span class="attr">agentId</span>: <span class="built_in">string</span> | <span class="literal">null</span> = <span class="literal">null</span>,</span></span><br><span class="line"><span class="params"></span>): <span class="built_in">void</span> &#123;</span><br><span class="line">  <span class="keyword">const</span> key = <span class="string">`<span class="subst">$&#123;agentId ?? <span class="string">&#x27;&#x27;</span>&#125;</span>:<span class="subst">$&#123;skillName&#125;</span>`</span></span><br><span class="line">  <span class="variable constant_">STATE</span>.<span class="property">invokedSkills</span>.<span class="title function_">set</span>(key, &#123; skillName, skillPath, content, <span class="attr">invokedAt</span>: <span class="title class_">Date</span>.<span class="title function_">now</span>(), agentId &#125;)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>压缩时的技能恢复</strong>（<code>createSkillAttachmentIfNeeded</code>，<code>compact.ts</code> 第 1494–1534 行）：</p>
+<ul>
+<li>按 <code>invokedAt</code> 降序排列（最近使用的优先保留）</li>
+<li>每个技能最多 <code>POST_COMPACT_MAX_TOKENS_PER_SKILL = 5,000</code> tokens，超出部分用 marker 替换：<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[... skill content truncated for compaction; use Read on the skill path if you need the full text]</span><br></pre></td></tr></table></figure></li>
+<li>总技能预算 <code>POST_COMPACT_SKILLS_TOKEN_BUDGET = 25,000</code> tokens</li>
+</ul>
+<p><code>postCompactCleanup.ts</code> 的关键注释（第 17–20 行）：</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Note: We intentionally do NOT clear invoked skill content here.</span></span><br><span class="line"><span class="comment">// Skill content must survive across multiple compactions so that</span></span><br><span class="line"><span class="comment">// createSkillAttachmentIfNeeded() can include the full skill text</span></span><br><span class="line"><span class="comment">// in subsequent compaction attachments.</span></span><br></pre></td></tr></table></figure>
+
+<p>技能内容会<strong>跨越多次压缩</strong>持久保留——这是刻意设计，不是遗漏。</p>
+<hr>
+<h2 id="警告与阻断系统"><a href="#警告与阻断系统" class="headerlink" title="警告与阻断系统"></a>警告与阻断系统</h2><p><strong>文件：<code>src/services/compact/autoCompact.ts</code>，第 93–145 行</strong></p>
+<p>系统维护四个阶梯式阈值：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">├─ WARNING_THRESHOLD（threshold - 20,000 tokens）：显示上下文窗口使用警告</span><br><span class="line">├─ ERROR_THRESHOLD（与 WARNING 相同值）：显示红色警告</span><br><span class="line">├─ AUTO_COMPACT_THRESHOLD（effectiveWindow - 13,000 tokens）：触发自动压缩</span><br><span class="line">└─ BLOCKING_LIMIT（actualWindow - 3,000 tokens）：阻断用户输入</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="keyword">function</span> <span class="title function_">calculateTokenWarningState</span>(<span class="params">tokenUsage, model</span>) &#123;</span><br><span class="line">  <span class="keyword">const</span> threshold = <span class="title function_">isAutoCompactEnabled</span>()</span><br><span class="line">    ? <span class="title function_">getAutoCompactThreshold</span>(model)</span><br><span class="line">    : <span class="title function_">getEffectiveContextWindowSize</span>(model)</span><br><span class="line"></span><br><span class="line">  <span class="keyword">const</span> percentLeft = <span class="title class_">Math</span>.<span class="title function_">max</span>(<span class="number">0</span>, <span class="title class_">Math</span>.<span class="title function_">round</span>(((threshold - tokenUsage) / threshold) * <span class="number">100</span>))</span><br><span class="line"></span><br><span class="line">  <span class="keyword">const</span> isAboveWarningThreshold = tokenUsage &gt;= threshold - <span class="number">20_000</span></span><br><span class="line">  <span class="keyword">const</span> isAboveAutoCompactThreshold = <span class="title function_">isAutoCompactEnabled</span>() &amp;&amp; tokenUsage &gt;= threshold</span><br><span class="line">  <span class="keyword">const</span> isAtBlockingLimit = tokenUsage &gt;= actualContextWindow - <span class="number">3_000</span>  <span class="comment">// 硬上限前 3K</span></span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> &#123; percentLeft, isAboveWarningThreshold, isAboveAutoCompactThreshold, isAtBlockingLimit &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>isAtBlockingLimit</code> 阻止新用户输入。可通过 <code>CLAUDE_CODE_BLOCKING_LIMIT_OVERRIDE</code> 环境变量覆盖。</p>
+<hr>
+<h2 id="查询循环中的触发顺序"><a href="#查询循环中的触发顺序" class="headerlink" title="查询循环中的触发顺序"></a>查询循环中的触发顺序</h2><p><strong>文件：<code>src/query.ts</code>，第 393–468 行</strong></p>
+<p>每次用户发送消息，压缩层按<strong>固定顺序</strong>依次检查：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">1. HISTORY_SNIP（feature(&#x27;HISTORY_SNIP&#x27;)）</span><br><span class="line">   └─ 从对话中间删除消息</span><br><span class="line">   └─ 返回 snipTokensFreed（传给 autocompact 校正阈值计算）</span><br><span class="line"></span><br><span class="line">2. microcompactMessages（始终运行）</span><br><span class="line">   ├─ maybeTimeBasedMicrocompact()     ← 时间触发，有结果则短路返回</span><br><span class="line">   └─ cachedMicrocompactPath()         ← 缓存路径（CACHED_MICROCOMPACT 特性）</span><br><span class="line">      └─ 外部用户：直接返回 &#123; messages &#125;（不做任何处理）</span><br><span class="line"></span><br><span class="line">3. applyCollapsesIfNeeded（feature(&#x27;CONTEXT_COLLAPSE&#x27;)）</span><br><span class="line">   └─ 基于 commit log 的粒度上下文管理</span><br><span class="line">   └─ 若触发，跳过 autocompact</span><br><span class="line"></span><br><span class="line">4. autoCompactIfNeeded（最终防线）</span><br><span class="line">   ├─ 检查熔断器</span><br><span class="line">   ├─ 检查全部跳过条件</span><br><span class="line">   ├─ 检查 tokenCount - snipTokensFreed &gt;= threshold</span><br><span class="line">   ├─ 优先尝试 sessionMemoryCompact（无需 API 调用）</span><br><span class="line">   └─ 回退到完全压缩（fork 子 Agent 生成总结）</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="所有关键常量速查表"><a href="#所有关键常量速查表" class="headerlink" title="所有关键常量速查表"></a>所有关键常量速查表</h2><table>
+<thead>
+<tr>
+<th>常量</th>
+<th>值</th>
+<th>文件</th>
+<th>行号</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>MODEL_CONTEXT_WINDOW_DEFAULT</code></td>
+<td>200,000</td>
+<td><code>context.ts</code></td>
+<td>9</td>
+</tr>
+<tr>
+<td><code>MAX_OUTPUT_TOKENS_FOR_SUMMARY</code></td>
+<td>20,000</td>
+<td><code>autoCompact.ts</code></td>
+<td>30</td>
+</tr>
+<tr>
+<td><code>AUTOCOMPACT_BUFFER_TOKENS</code></td>
+<td>13,000</td>
+<td><code>autoCompact.ts</code></td>
+<td>62</td>
+</tr>
+<tr>
+<td><code>WARNING_THRESHOLD_BUFFER_TOKENS</code></td>
+<td>20,000</td>
+<td><code>autoCompact.ts</code></td>
+<td>63</td>
+</tr>
+<tr>
+<td><code>ERROR_THRESHOLD_BUFFER_TOKENS</code></td>
+<td>20,000</td>
+<td><code>autoCompact.ts</code></td>
+<td>64</td>
+</tr>
+<tr>
+<td><code>MANUAL_COMPACT_BUFFER_TOKENS</code></td>
+<td>3,000</td>
+<td><code>autoCompact.ts</code></td>
+<td>65</td>
+</tr>
+<tr>
+<td><code>MAX_CONSECUTIVE_AUTOCOMPACT_FAILURES</code></td>
+<td>3</td>
+<td><code>autoCompact.ts</code></td>
+<td>70</td>
+</tr>
+<tr>
+<td><code>POST_COMPACT_MAX_FILES_TO_RESTORE</code></td>
+<td>5</td>
+<td><code>compact.ts</code></td>
+<td>122</td>
+</tr>
+<tr>
+<td><code>POST_COMPACT_TOKEN_BUDGET</code></td>
+<td>50,000</td>
+<td><code>compact.ts</code></td>
+<td>123</td>
+</tr>
+<tr>
+<td><code>POST_COMPACT_MAX_TOKENS_PER_FILE</code></td>
+<td>5,000</td>
+<td><code>compact.ts</code></td>
+<td>124</td>
+</tr>
+<tr>
+<td><code>POST_COMPACT_MAX_TOKENS_PER_SKILL</code></td>
+<td>5,000</td>
+<td><code>compact.ts</code></td>
+<td>129</td>
+</tr>
+<tr>
+<td><code>POST_COMPACT_SKILLS_TOKEN_BUDGET</code></td>
+<td>25,000</td>
+<td><code>compact.ts</code></td>
+<td>130</td>
+</tr>
+<tr>
+<td><code>MAX_COMPACT_STREAMING_RETRIES</code></td>
+<td>2</td>
+<td><code>compact.ts</code></td>
+<td>131</td>
+</tr>
+<tr>
+<td><code>MAX_PTL_RETRIES</code></td>
+<td>3</td>
+<td><code>compact.ts</code></td>
+<td>227</td>
+</tr>
+<tr>
+<td><code>DEFAULT_SM_COMPACT_CONFIG.minTokens</code></td>
+<td>10,000</td>
+<td><code>sessionMemoryCompact.ts</code></td>
+<td>57</td>
+</tr>
+<tr>
+<td><code>DEFAULT_SM_COMPACT_CONFIG.minTextBlockMessages</code></td>
+<td>5</td>
+<td><code>sessionMemoryCompact.ts</code></td>
+<td>58</td>
+</tr>
+<tr>
+<td><code>DEFAULT_SM_COMPACT_CONFIG.maxTokens</code></td>
+<td>40,000</td>
+<td><code>sessionMemoryCompact.ts</code></td>
+<td>59</td>
+</tr>
+<tr>
+<td><code>TIME_BASED_MC_CONFIG.gapThresholdMinutes</code></td>
+<td>60 分钟</td>
+<td><code>timeBasedMCConfig.ts</code></td>
+<td>31</td>
+</tr>
+<tr>
+<td><code>TIME_BASED_MC_CONFIG.keepRecent</code></td>
+<td>5</td>
+<td><code>timeBasedMCConfig.ts</code></td>
+<td>33</td>
+</tr>
+<tr>
+<td><code>TOOL_RESULT_CLEARED_MESSAGE</code></td>
+<td><code>&#39;[Old tool result content cleared]&#39;</code></td>
+<td><code>toolResultStorage.ts</code></td>
+<td>34</td>
+</tr>
+<tr>
+<td><code>TIME_BASED_MC_CLEARED_MESSAGE</code></td>
+<td><code>&#39;[Old tool result content cleared]&#39;</code></td>
+<td><code>microCompact.ts</code></td>
+<td>36</td>
+</tr>
+<tr>
+<td><code>roughTokenCountEstimation</code> 精度</td>
+<td>4 字节&#x2F;token</td>
+<td><code>tokenEstimation.ts</code></td>
+<td>205</td>
+</tr>
+<tr>
+<td>API native MC trigger</td>
+<td>180,000 tokens</td>
+<td><code>apiMicrocompact.ts</code></td>
+<td>—</td>
+</tr>
+<tr>
+<td>API native MC target</td>
+<td>40,000 tokens</td>
+<td><code>apiMicrocompact.ts</code></td>
+<td>—</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="设计哲学总结"><a href="#设计哲学总结" class="headerlink" title="设计哲学总结"></a>设计哲学总结</h2><p>这套系统体现了几个精妙的工程取舍：</p>
+<p><strong>1. 代价递进</strong>：从”直接清空旧工具结果”（近乎零代价）到”fork 子 Agent 生成摘要”（一次额外 API 调用），代价逐层提升，每层只在必要时触发。</p>
+<p><strong>2. 缓存感知</strong>：时间触发微压缩专门利用缓存冷却窗口，在”反正要重发”的时机顺手清理，不额外增加成本。</p>
+<p><strong>3. 熔断器防护</strong>：BQ 数据显示没有熔断器时每天全局浪费 25 万次 API 调用——用 3 次失败上限解决了一个真实的生产问题。</p>
+<p><strong>4. 技能内容持久化</strong>：技能内容刻意跨越多次压缩保留，确保 AI 始终能”记住”本 session 使用过哪些技能的完整指令，而不是在每次压缩后茫然。</p>
+<p><strong>5. 摘要与工具硬隔离</strong>：<code>NO_TOOLS_PREAMBLE</code> + API 层 <code>deny</code> 双重保险，源于真实的 2.79% 失败率数据，不是过度防御。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://helsome.github.io">helson</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://helsome.github.io/2026/04/17/claude-code-context-compression-system/">https://helsome.github.io/2026/04/17/claude-code-context-compression-system/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://helsome.github.io" target="_blank">infinite</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/AI/">AI</a><a class="post-meta__tags" href="/tags/Claude-Code/">Claude Code</a><a class="post-meta__tags" href="/tags/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/">源码分析</a><a class="post-meta__tags" href="/tags/%E4%B8%8A%E4%B8%8B%E6%96%87%E7%AE%A1%E7%90%86/">上下文管理</a></div><div class="post-share"><div class="social-share" data-image="/img/butterfly-icon.png" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2026/04/17/kairos-dream-memory-system/" title="KAIROS 模式与 /dream：Claude Code 的仿生记忆系统"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">KAIROS 模式与 /dream：Claude Code 的仿生记忆系统</div></div><div class="info-2"><div class="info-item-1">KAIROS 模式与 &#x2F;dream：Claude Code 的仿生记忆系统 基于源码分析，揭秘 Claude Code 中 AI “做梦整理记忆”的完整机制。   目录 KAIROS 是什么 Feature Flag 体系 日期追加式日志：记忆的原始形态 &#x2F;dream 技能：蒸馏记忆的工人 autoDream：自动触发引擎 四阶段蒸馏流程 触发门控：不是”夜间”而是”空闲足够久” KAIROS Agent 模式：永续运行的自主体 完整内存流转图 关键源码位置速查表   KAIROS 是什么KAIROS（καιρός，古希腊语，意为”恰当的时机”）是 Claude Code 中一个完全自主、持续运行的 Agent 模式的代号。与普通的单次对话不同，KAIROS 模式下 Claude 是一个”一直在线”的智能体：  通过 &lt;tick&gt; 心跳信号定期唤醒 主动订阅 GitHub PR 事件 在低活跃期整理记忆 向用户推送通知  整个系统在 src/main.tsx 中有超过 80 处 feature(&#39;KAIROS&#39;) 门控，是 Clau...</div></div></div></a><a class="pagination-related" href="/2026/04/17/claude-code-skill-discovery-mechanism/" title="Claude Code 技能发现机制深度解析"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">Claude Code 技能发现机制深度解析</div></div><div class="info-2"><div class="info-item-1">Claude Code 技能发现机制深度解析 基于源码逆向分析，详解 EXPERIMENTAL_SKILL_SEARCH 特性标志控制下的完整技能发现与加载系统。   目录 系统概览 Feature Flag 门控机制 三层发现架构 层一：Turn-0 自动发现 层二：主动搜索工具 DiscoverSkillsTool 层三：远程技能系统   skill_discovery Attachment 数据结构 SKILL.md 扫描与本地加载 SkillTool 三条执行路径 遥测：was_discovered 字段 完整调用流程图 关键源码位置速查表   系统概览Claude Code 的技能发现系统是一个独立于 Proactive 模式的子系统，普通对话模式同样可用。整个系统由编译期 Feature Flag EXPERIMENTAL_SKILL_SEARCH 控制：  外部构建（npm 包）：Flag 为 false，相关代码在打包阶段被死代码消除（DCE），连 &#39;skill_discovery&#39; 字符串字面量都不会出现在产物中。 Anthropic 内部构建：...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2026/04/17/claude-code-skill-discovery-mechanism/" title="Claude Code 技能发现机制深度解析"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-04-17</div><div class="info-item-2">Claude Code 技能发现机制深度解析</div></div><div class="info-2"><div class="info-item-1">Claude Code 技能发现机制深度解析 基于源码逆向分析，详解 EXPERIMENTAL_SKILL_SEARCH 特性标志控制下的完整技能发现与加载系统。   目录 系统概览 Feature Flag 门控机制 三层发现架构 层一：Turn-0 自动发现 层二：主动搜索工具 DiscoverSkillsTool 层三：远程技能系统   skill_discovery Attachment 数据结构 SKILL.md 扫描与本地加载 SkillTool 三条执行路径 遥测：was_discovered 字段 完整调用流程图 关键源码位置速查表   系统概览Claude Code 的技能发现系统是一个独立于 Proactive 模式的子系统，普通对话模式同样可用。整个系统由编译期 Feature Flag EXPERIMENTAL_SKILL_SEARCH 控制：  外部构建（npm 包）：Flag 为 false，相关代码在打包阶段被死代码消除（DCE），连 &#39;skill_discovery&#39; 字符串字面量都不会出现在产物中。 Anthropic 内部构建：...</div></div></div></a><a class="pagination-related" href="/2026/04/17/kairos-dream-memory-system/" title="KAIROS 模式与 &#x2F;dream：Claude Code 的仿生记忆系统"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-04-17</div><div class="info-item-2">KAIROS 模式与 &#x2F;dream：Claude Code 的仿生记忆系统</div></div><div class="info-2"><div class="info-item-1">KAIROS 模式与 &#x2F;dream：Claude Code 的仿生记忆系统 基于源码分析，揭秘 Claude Code 中 AI “做梦整理记忆”的完整机制。   目录 KAIROS 是什么 Feature Flag 体系 日期追加式日志：记忆的原始形态 &#x2F;dream 技能：蒸馏记忆的工人 autoDream：自动触发引擎 四阶段蒸馏流程 触发门控：不是”夜间”而是”空闲足够久” KAIROS Agent 模式：永续运行的自主体 完整内存流转图 关键源码位置速查表   KAIROS 是什么KAIROS（καιρός，古希腊语，意为”恰当的时机”）是 Claude Code 中一个完全自主、持续运行的 Agent 模式的代号。与普通的单次对话不同，KAIROS 模式下 Claude 是一个”一直在线”的智能体：  通过 &lt;tick&gt; 心跳信号定期唤醒 主动订阅 GitHub PR 事件 在低活跃期整理记忆 向用户推送通知  整个系统在 src/main.tsx 中有超过 80 处 feature(&#39;KAIROS&#39;) 门控，是 Clau...</div></div></div></a><a class="pagination-related" href="/2026/04/01/claude-code-skill-discovery/" title="Claude Code 技能发现机制深度解析"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-04-01</div><div class="info-item-2">Claude Code 技能发现机制深度解析</div></div><div class="info-2"><div class="info-item-1"> 基于源码逆向分析，详解 EXPERIMENTAL_SKILL_SEARCH 特性标志控制下的完整技能发现与加载系统。   目录 系统概览 Feature Flag 门控机制 三层发现架构 层一：Turn-0 自动发现 层二：主动搜索工具 DiscoverSkillsTool 层三：远程技能系统   skill_discovery Attachment 数据结构 SKILL.md 扫描与本地加载 SkillTool 三条执行路径 遥测：was_discovered 字段 完整调用流程图 关键源码位置速查表   系统概览Claude Code 的技能发现系统是一个独立于 Proactive 模式的子系统，普通对话模式同样可用。整个系统由编译期 Feature Flag EXPERIMENTAL_SKILL_SEARCH 控制：  外部构建（npm 包）：Flag 为 false，相关代码在打包阶段被死代码消除（DCE），连 &#39;skill_discovery&#39; 字符串字面量都不会出现在产物中。 Anthropic 内部构建：Flag 为 true，完整系统生效。部分功...</div></div></div></a><a class="pagination-related" href="/2026/04/01/claude-code-agent-team-analysis/" title="Claude Code Agent Team 架构分析：Multi-Agent 协作的范式跃迁"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-04-01</div><div class="info-item-2">Claude Code Agent Team 架构分析：Multi-Agent 协作的范式跃迁</div></div><div class="info-2"><div class="info-item-1"> 本文梳理 Claude Code 新增的 Agent Team 功能的核心机制，并与既有 Sub-Agent 体系做结构性对比。目标读者：对 AI 工程架构感兴趣但不一定有编程背景的人。   背景Claude Code 的 Sub-Agent 能力已经相对成熟——给它一个任务，它会在独立进程中并行处理多个子任务，完成后把结果汇回主对话。这套机制在大多数场景下够用。 但有一类任务它处理得不好：子任务之间存在强依赖关系，或需要实时协商。比如你想让 AI 同时负责写文档和写测试，而测试必须基于最新的接口定义——这时候两个 Sub-Agent 的孤立执行就会出问题。它们各自为政，没有任何横向沟通通道。 Agent Team 就是针对这个问题设计的。  架构设计Agent Team 的核心抽象由四个组件构成： Main Agent（队长）：解析用户意图，拆解任务，创建并分配队友，最终汇总交付。 Team Members（队友）：每个队友在独立的上下文窗口中运行，持有自己的”大脑”。这意味着队友 A 写了什么，队友 B 不会自动感知——这是刻意的设计，目的是防止上下文污染。 Mailbox...</div></div></div></a><a class="pagination-related" href="/2026/04/01/feishu-to-claude-skill/" title="利用 Claude Code 抓取飞书知识库转换为 Skill 指南"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-04-01</div><div class="info-item-2">利用 Claude Code 抓取飞书知识库转换为 Skill 指南</div></div><div class="info-2"><div class="info-item-1">这是什么把飞书 Wiki 里的技术文档（Bug 案例、SOP、流程指南等）拉下来，整理成 Claude Code 插件可以直接引用的内置知识库 Skill。 产出物：skills/&lt;name&gt;/SKILL.md + references/*.md，纯静态文件，运行时零 API 调用。  为什么用「双终端」模式 一句话：省钱。  制作一个知识库 Skill 的工作量大致分两类：    工作类型 举例 特点    动脑的 确定知识范围、设计 Skill 结构、写 SKILL.md 路由表、Review 产出质量 需要强推理，量少   动手的 遍历飞书文档树、逐篇 fetch、清理飞书特有标签、合并整理、控制体积 不需要强推理，量大   如果全程用 Opus（贵）干，大量 token 花在「读飞书文档 → 复制粘贴 → 清理格式」这种搬砖活上，很浪费。 所以我们拆成两个终端： 123456789┌─────────────────────────┐     提示词文件      ┌─────────────────────────┐│  终端 A: Plan Model  ...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/butterfly-icon.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">helson</div><div class="author-info-description">吾生有涯，其知无涯</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">19</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">15</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">0</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/helsome"><i class="fab fa-github"></i><span>GitHub</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/helsome" target="_blank" title="Github"><i class="fab fa-github" style="color: #2A2218;"></i></a></div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Claude-Code-%E4%B8%8A%E4%B8%8B%E6%96%87%E5%8E%8B%E7%BC%A9%E7%B3%BB%E7%BB%9F%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90"><span class="toc-number">1.</span> <span class="toc-text">Claude Code 上下文压缩系统深度解析</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%9B%AE%E5%BD%95"><span class="toc-number">1.1.</span> <span class="toc-text">目录</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%B3%BB%E7%BB%9F%E5%85%A8%E6%99%AF"><span class="toc-number">1.2.</span> <span class="toc-text">系统全景</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%8A%E4%B8%8B%E6%96%87%E7%AA%97%E5%8F%A3%E6%A3%80%E6%B5%8B"><span class="toc-number">1.3.</span> <span class="toc-text">上下文窗口检测</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Token-%E8%AE%A1%E6%95%B0%E6%9C%BA%E5%88%B6"><span class="toc-number">1.4.</span> <span class="toc-text">Token 计数机制</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%B2%BE%E7%A1%AE%E8%AE%A1%E6%95%B0%EF%BC%88%E5%9F%BA%E4%BA%8E-API-%E8%BF%94%E5%9B%9E%E5%80%BC%EF%BC%89"><span class="toc-number">1.4.1.</span> <span class="toc-text">精确计数（基于 API 返回值）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%B2%97%E7%95%A5%E4%BC%B0%E7%AE%97%EF%BC%88%E6%97%A0-API-%E8%B0%83%E7%94%A8%EF%BC%89"><span class="toc-number">1.4.2.</span> <span class="toc-text">粗略估算（无 API 调用）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%AC%AC%E4%B8%80%E5%B1%82%EF%BC%9A%E6%97%B6%E9%97%B4%E8%A7%A6%E5%8F%91%E5%BE%AE%E5%8E%8B%E7%BC%A9"><span class="toc-number">1.5.</span> <span class="toc-text">第一层：时间触发微压缩</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%AE%BE%E8%AE%A1%E5%8A%A8%E6%9C%BA"><span class="toc-number">1.5.1.</span> <span class="toc-text">设计动机</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%A7%A6%E5%8F%91%E6%9D%A1%E4%BB%B6"><span class="toc-number">1.5.2.</span> <span class="toc-text">触发条件</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%89%A7%E8%A1%8C%E5%8A%A8%E4%BD%9C"><span class="toc-number">1.5.3.</span> <span class="toc-text">执行动作</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%AC%AC%E4%BA%8C%E5%B1%82%EF%BC%9A%E7%BC%93%E5%AD%98%E5%BE%AE%E5%8E%8B%E7%BC%A9%EF%BC%88ant-%E4%B8%93%E5%B1%9E%EF%BC%89"><span class="toc-number">1.6.</span> <span class="toc-text">第二层：缓存微压缩（ant 专属）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%8E%E7%AC%AC%E4%B8%80%E5%B1%82%E7%9A%84%E6%9C%AC%E8%B4%A8%E5%8C%BA%E5%88%AB"><span class="toc-number">1.6.1.</span> <span class="toc-text">与第一层的本质区别</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%A4%96%E9%83%A8%E7%94%A8%E6%88%B7%E7%9A%84%E9%99%8D%E7%BA%A7"><span class="toc-number">1.6.2.</span> <span class="toc-text">外部用户的降级</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%AC%AC%E4%B8%89%E5%B1%82%EF%BC%9A%E8%87%AA%E5%8A%A8%E5%8E%8B%E7%BC%A9"><span class="toc-number">1.7.</span> <span class="toc-text">第三层：自动压缩</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%A7%A6%E5%8F%91%E9%98%88%E5%80%BC%E7%9A%84%E7%B2%BE%E7%A1%AE%E8%AE%A1%E7%AE%97"><span class="toc-number">1.7.1.</span> <span class="toc-text">触发阈值的精确计算</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%86%94%E6%96%AD%E5%99%A8%EF%BC%9A%E4%B8%89%E6%AC%A1%E5%A4%B1%E8%B4%A5%E5%81%9C%E6%AD%A2"><span class="toc-number">1.7.2.</span> <span class="toc-text">熔断器：三次失败停止</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AE%8C%E6%95%B4%E8%A7%A6%E5%8F%91%E5%86%B3%E7%AD%96%E9%93%BE"><span class="toc-number">1.7.3.</span> <span class="toc-text">完整触发决策链</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%AC%AC%E5%9B%9B%E5%B1%82%EF%BC%9A%E4%BC%9A%E8%AF%9D%E8%AE%B0%E5%BF%86%E5%8E%8B%E7%BC%A9"><span class="toc-number">1.8.</span> <span class="toc-text">第四层：会话记忆压缩</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%BB%98%E8%AE%A4%E9%85%8D%E7%BD%AE"><span class="toc-number">1.8.1.</span> <span class="toc-text">默认配置</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86"><span class="toc-number">1.8.2.</span> <span class="toc-text">工作原理</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AE%89%E5%85%A8%E9%97%A8%E6%8E%A7"><span class="toc-number">1.8.3.</span> <span class="toc-text">安全门控</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%AC%AC%E4%BA%94%E5%B1%82%EF%BC%9A%E5%AE%8C%E5%85%A8%E5%8E%8B%E7%BC%A9"><span class="toc-number">1.9.</span> <span class="toc-text">第五层：完全压缩</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#NO-TOOLS-PREAMBLE%EF%BC%9A%E4%B8%BA%E4%BB%80%E4%B9%88%E8%BF%99%E4%B9%88%E4%B8%A5%E5%8E%89"><span class="toc-number">1.9.1.</span> <span class="toc-text">NO_TOOLS_PREAMBLE：为什么这么严厉</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%8D%89%E7%A8%BF%E6%A8%A1%E5%BC%8F"><span class="toc-number">1.9.2.</span> <span class="toc-text">&lt;analysis&gt; 草稿模式</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#9-%E8%8A%82%E6%80%BB%E7%BB%93%E6%8F%90%E7%A4%BA%E8%AF%8D"><span class="toc-number">1.9.3.</span> <span class="toc-text">9 节总结提示词</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8F%8C%E8%B7%AF%E5%BE%84%E6%B5%81%E5%BC%8F%E6%9E%B6%E6%9E%84"><span class="toc-number">1.9.4.</span> <span class="toc-text">双路径流式架构</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#PTL%EF%BC%88Prompt-Too-Long%EF%BC%89%E9%87%8D%E8%AF%95"><span class="toc-number">1.9.5.</span> <span class="toc-text">PTL（Prompt Too Long）重试</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%91%98%E8%A6%81%E6%B3%A8%E5%85%A5%E5%9B%9E%E4%B8%8A%E4%B8%8B%E6%96%87%E7%9A%84%E6%A0%BC%E5%BC%8F"><span class="toc-number">1.9.6.</span> <span class="toc-text">摘要注入回上下文的格式</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8E%8B%E7%BC%A9%E5%90%8E%E7%9A%84%E4%B8%8A%E4%B8%8B%E6%96%87%E9%87%8D%E5%BB%BA"><span class="toc-number">1.10.</span> <span class="toc-text">压缩后的上下文重建</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%8A%80%E8%83%BD%E5%86%85%E5%AE%B9%E7%9A%84%E8%B7%A8%E5%8E%8B%E7%BC%A9%E5%AD%98%E6%B4%BB"><span class="toc-number">1.11.</span> <span class="toc-text">技能内容的跨压缩存活</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%AD%A6%E5%91%8A%E4%B8%8E%E9%98%BB%E6%96%AD%E7%B3%BB%E7%BB%9F"><span class="toc-number">1.12.</span> <span class="toc-text">警告与阻断系统</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%9F%A5%E8%AF%A2%E5%BE%AA%E7%8E%AF%E4%B8%AD%E7%9A%84%E8%A7%A6%E5%8F%91%E9%A1%BA%E5%BA%8F"><span class="toc-number">1.13.</span> <span class="toc-text">查询循环中的触发顺序</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%89%80%E6%9C%89%E5%85%B3%E9%94%AE%E5%B8%B8%E9%87%8F%E9%80%9F%E6%9F%A5%E8%A1%A8"><span class="toc-number">1.14.</span> <span class="toc-text">所有关键常量速查表</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%AE%BE%E8%AE%A1%E5%93%B2%E5%AD%A6%E6%80%BB%E7%BB%93"><span class="toc-number">1.15.</span> <span class="toc-text">设计哲学总结</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/04/17/claude-code-skill-discovery-mechanism/" title="Claude Code 技能发现机制深度解析">Claude Code 技能发现机制深度解析</a><time datetime="2026-04-16T16:00:00.000Z" title="发表于 2026-04-17 00:00:00">2026-04-17</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/04/17/claude-code-context-compression-system/" title="Claude Code 上下文压缩系统深度解析">Claude Code 上下文压缩系统深度解析</a><time datetime="2026-04-16T16:00:00.000Z" title="发表于 2026-04-17 00:00:00">2026-04-17</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/04/17/kairos-dream-memory-system/" title="KAIROS 模式与 /dream：Claude Code 的仿生记忆系统">KAIROS 模式与 /dream：Claude Code 的仿生记忆系统</a><time datetime="2026-04-16T16:00:00.000Z" title="发表于 2026-04-17 00:00:00">2026-04-17</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/04/03/new-post-1775177623699/" title="新文章标题">新文章标题</a><time datetime="2026-04-02T16:53:43.000Z" title="发表于 2026-04-03 00:53:43">2026-04-03</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/04/01/claude-code-agent-team-analysis/" title="Claude Code Agent Team 架构分析：Multi-Agent 协作的范式跃迁">Claude Code Agent Team 架构分析：Multi-Agent 协作的范式跃迁</a><time datetime="2026-04-01T04:00:00.000Z" title="发表于 2026-04-01 12:00:00">2026-04-01</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2025 - 2026 By helson</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.1</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.4</a></span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.4"></script><script src="/js/main.js?v=5.5.4"></script><div class="js-pjax"></div><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>
